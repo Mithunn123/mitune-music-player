@@ -1,0 +1,37 @@
+/* Glass card component - shared styles */
+.glass-card {
+  @apply bg-zinc-900/30 backdrop-blur-lg border border-white/10 rounded-2xl shadow-xl;
+}
+
+/* Glass button */
+.glass-btn {
+  @apply bg-zinc-900/30 backdrop-blur-lg border border-white/15 rounded-lg px-4 py-2 text-zinc-300 hover:bg-white/10 hover:text-white transition-all focus:outline-none focus:ring-2 focus:ring-white/20;
+}
+
+/* Mood pills styling */
+.mood-pill {
+  @apply rounded-full px-3 py-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-white/5 transition-all inline-flex items-center gap-1 text-xs font-medium;
+}
+
+/* Genre filter pill */
+.genre-pill {
+  @apply rounded-full px-3 py-1.5 text-zinc-400 hover:bg-white/5 hover:text-white transition-all inline-flex items-center gap-1 text-xs font-medium;
+}
+
+/* Track list item */
+.track-item {
+  @apply flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-white/5 transition-colors cursor-pointer select-none;
+}
+
+/* Progress bar */
+.progress-bar {
+  @apply h-1 rounded-full bg-zinc-800 overflow-hidden;
+}
+.progress-bar-filled {
+  @apply h-full bg-gradient-indigo-purple transition-all duration-200;
+}
+
+/* Timeline time display */
+.timelabel {
+  @apply text-zinc-500 text-xs mr-2;
+}

@@ -1,0 +1,18 @@
+# Node/Vite
+node_modules/
+dist/
+dist-ssr/
+*.local
+.env
+.env.*
+!.env.example
+
+# Rust/Tauri
+target/
+src-tauri/target/
+src-tauri/gen/
+**/*.rs.bk
+
+# OS
+.DS_Store
+Thumbs.db
