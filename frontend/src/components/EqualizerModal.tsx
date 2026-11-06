@@ -53,29 +53,29 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+      <div className="bg-[#121318] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
         <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sliders className="w-5 h-5 text-indigo-400" />
-            <h2 className="text-lg font-bold text-white">5-Band Audio Equalizer</h2>
+            <Sliders className="w-5 h-5 text-white" />
+            <h2 className="text-base font-semibold text-white">Audio Equalizer</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
+            className="p-1 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Presets */}
-        <div className="p-6 border-b border-white/5">
+        <div className="p-6 border-b border-white/10">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs uppercase tracking-wider text-zinc-500 font-semibold">
-              EQ Presets
+            <span className="text-[10px] uppercase tracking-wider text-neutral-400 font-mono">
+              Presets
             </span>
             <button
               onClick={handleReset}
-              className="text-xs text-zinc-400 hover:text-white flex items-center gap-1"
+              className="text-xs text-neutral-400 hover:text-white flex items-center gap-1 transition-colors"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Reset</span>
@@ -88,8 +88,8 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose 
                 onClick={() => applyPreset(pName)}
                 className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
                   activePreset === pName
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                    : 'bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700'
+                    ? 'bg-white text-black'
+                    : 'bg-[#181920] border border-white/10 text-neutral-400 hover:text-white hover:bg-white/10'
                 }`}
               >
                 {pName}
@@ -103,7 +103,7 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose 
           <div className="flex justify-between items-center h-48 px-4">
             {BANDS.map((band, idx) => (
               <div key={idx} className="flex flex-col items-center h-full justify-between">
-                <span className="text-[11px] font-mono text-zinc-400">
+                <span className="text-[11px] font-mono text-neutral-400 tabular-nums">
                   {bandValues[idx] > 0 ? `+${bandValues[idx]}` : bandValues[idx]}dB
                 </span>
                 <div className="relative h-28 flex items-center">
@@ -114,13 +114,13 @@ export const EqualizerModal: React.FC<EqualizerModalProps> = ({ isOpen, onClose 
                     step="1"
                     value={bandValues[idx]}
                     onChange={(e) => handleSliderChange(idx, parseFloat(e.target.value))}
-                    className="h-28 w-1.5 appearance-none bg-zinc-800 rounded-full outline-none accent-indigo-500 cursor-pointer"
+                    className="h-28 w-1.5 appearance-none bg-white/10 rounded-full outline-none accent-white cursor-pointer"
                     style={{ writingMode: 'vertical-lr', direction: 'rtl' }}
                   />
                 </div>
                 <div className="text-center mt-2">
-                  <p className="text-xs font-semibold text-zinc-200">{band.label}</p>
-                  <p className="text-[10px] text-zinc-500">{band.sub}</p>
+                  <p className="text-xs font-medium text-neutral-200">{band.label}</p>
+                  <p className="text-[10px] text-neutral-500">{band.sub}</p>
                 </div>
               </div>
             ))}

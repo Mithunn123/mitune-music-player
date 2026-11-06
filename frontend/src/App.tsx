@@ -21,6 +21,7 @@ import { RecommendationsDashboard } from './components/RecommendationsDashboard'
 import { SettingsView } from './components/SettingsView';
 import { CreatePlaylistModal } from './components/CreatePlaylistModal';
 import { AmbientMode } from './components/AmbientMode';
+import { LyricsDrawer } from './components/LyricsDrawer';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AudioProvider, useAudio } from './context/AudioContext';
 import { storageService } from './services/storageService';
@@ -80,6 +81,7 @@ const MainApp: React.FC = () => {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isEqOpen, setIsEqOpen] = useState(false);
   const [isQueueOpen, setIsQueueOpen] = useState(false);
+  const [isLyricsOpen, setIsLyricsOpen] = useState(false);
   const [isCreatePlaylistOpen, setIsCreatePlaylistOpen] = useState(false);
   const [isAmbientModeOpen, setIsAmbientModeOpen] = useState(false);
 
@@ -168,7 +170,7 @@ const MainApp: React.FC = () => {
   const visibleTracks = getVisibleTracks();
 
   return (
-    <div className="flex h-screen w-screen bg-zinc-950 text-zinc-100 overflow-hidden font-sans select-none">
+    <div className="flex h-screen w-screen bg-[#0d0e12] text-neutral-100 overflow-hidden font-sans select-none">
       {/* Navigation Sidebar with Collapse/Expand */}
       <Sidebar
         currentTab={currentTab}
@@ -188,33 +190,33 @@ const MainApp: React.FC = () => {
       />
 
       {/* Main Studio Center */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden bg-gradient-to-b from-zinc-900/40 via-zinc-950 to-zinc-950">
+      <div className="flex-1 flex flex-col h-full overflow-hidden bg-[#0d0e12]">
         {/* Top Header Bar */}
-        <header className="h-16 px-8 border-b border-white/5 flex items-center justify-between gap-4 shrink-0">
+        <header className="h-16 px-6 border-b border-white/10 flex items-center justify-between gap-4 shrink-0 bg-[#0d0e12]/80 backdrop-blur-md">
           <div className="relative flex-1 max-w-md">
-            <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
             <input
               type="text"
               placeholder="Search library, artists, titles..."
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              className="w-full bg-zinc-900/60 border border-white/5 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors"
+              className="w-full bg-[#121318] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white/20 transition-colors"
             />
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsAmbientModeOpen(true)}
-              className="px-3 py-1.5 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-300 hover:bg-purple-600/30 font-medium text-xs flex items-center gap-1.5 transition-all shadow-md"
+              className="px-3.5 py-1.5 rounded-xl bg-[#121318] border border-white/10 text-neutral-300 hover:text-white hover:bg-[#181920] font-medium text-xs flex items-center gap-1.5 transition-all"
               title="Open Ambient Vinyl CD Mode"
             >
-              <Maximize2 className="w-3.5 h-3.5 text-purple-400" />
+              <Maximize2 className="w-3.5 h-3.5 text-neutral-300" />
               <span>Ambient Mode</span>
             </button>
 
             <button
               onClick={() => setIsCreatePlaylistOpen(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-zinc-300 hover:text-white hover:bg-white/10 font-medium text-xs flex items-center gap-1.5 transition-all"
+              className="px-3.5 py-1.5 rounded-xl bg-[#121318] border border-white/10 text-neutral-300 hover:text-white hover:bg-[#181920] font-medium text-xs flex items-center gap-1.5 transition-all"
             >
               <FolderPlus className="w-3.5 h-3.5" />
               <span>Create Playlist</span>
@@ -222,7 +224,7 @@ const MainApp: React.FC = () => {
 
             <button
               onClick={() => setIsImportOpen(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-600/30 font-medium text-xs flex items-center gap-2 transition-all"
+              className="px-3.5 py-1.5 rounded-xl bg-[#121318] border border-white/10 text-neutral-300 hover:text-white hover:bg-[#181920] font-medium text-xs flex items-center gap-2 transition-all"
             >
               <Music2 className="w-3.5 h-3.5" />
               <span>Import Audio</span>
@@ -241,10 +243,10 @@ const MainApp: React.FC = () => {
           ) : (
             <div className="space-y-6">
               {/* Header Hero Banner */}
-              <div className="relative rounded-3xl p-6 overflow-hidden bg-gradient-to-r from-indigo-950/40 via-purple-950/20 to-zinc-900/50 border border-white/10 shadow-2xl">
+              <div className="rounded-2xl p-6 bg-[#121318] border border-white/10">
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-indigo-400">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 font-mono">
                       {currentTab === 'playlists' && activePlaylist
                         ? 'PLAYLIST'
                         : currentTab === 'favorites'
@@ -253,7 +255,7 @@ const MainApp: React.FC = () => {
                         ? 'ACTIVITY'
                         : 'STUDIO LIBRARY'}
                     </span>
-                    <h2 className="text-3xl font-black text-white mt-1 tracking-tight">
+                    <h2 className="text-2xl font-bold text-white mt-1 tracking-tight">
                       {currentTab === 'playlists' && activePlaylist
                         ? activePlaylist.name
                         : currentTab === 'favorites'
@@ -262,7 +264,7 @@ const MainApp: React.FC = () => {
                         ? 'Recently Played'
                         : 'All Tracks'}
                     </h2>
-                    <p className="text-zinc-400 text-xs mt-1">
+                    <p className="text-neutral-400 text-xs mt-1">
                       {visibleTracks.length} track(s) · High Fidelity Offline & Stream Resolution
                     </p>
                   </div>
@@ -274,9 +276,9 @@ const MainApp: React.FC = () => {
                           playTrack(visibleTracks[0], visibleTracks);
                         }
                       }}
-                      className="px-5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-lg shadow-indigo-600/30 transition-all flex items-center gap-2"
+                      className="px-4 py-2 rounded-xl bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition-colors flex items-center gap-2"
                     >
-                      <Sparkles className="w-4 h-4" />
+                      <Sparkles className="w-3.5 h-3.5" />
                       <span>Play All</span>
                     </button>
                   </div>
@@ -291,10 +293,10 @@ const MainApp: React.FC = () => {
                         onClick={() =>
                           setSelectedGenre(selectedGenre === genre ? null : genre)
                         }
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                        className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
                           selectedGenre === genre
-                            ? 'bg-indigo-600 text-white'
-                            : 'bg-zinc-800/60 text-zinc-400 hover:text-white hover:bg-zinc-800'
+                            ? 'bg-white text-black'
+                            : 'bg-[#181920] border border-white/5 text-neutral-400 hover:text-white hover:bg-white/10'
                         }`}
                       >
                         {genre}
@@ -317,6 +319,8 @@ const MainApp: React.FC = () => {
         <AudioTimeline
           onToggleQueue={() => setIsQueueOpen(!isQueueOpen)}
           onToggleEqualizer={() => setIsEqOpen(!isEqOpen)}
+          onToggleLyrics={() => setIsLyricsOpen(!isLyricsOpen)}
+          isLyricsOpen={isLyricsOpen}
         />
       </div>
 
@@ -341,6 +345,11 @@ const MainApp: React.FC = () => {
       <QueueDrawer
         isOpen={isQueueOpen}
         onClose={() => setIsQueueOpen(false)}
+      />
+
+      <LyricsDrawer
+        isOpen={isLyricsOpen}
+        onClose={() => setIsLyricsOpen(false)}
       />
 
       {/* Full Screen Ambient Vinyl Mode with isolated ErrorBoundary */}

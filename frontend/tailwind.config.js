@@ -7,7 +7,19 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#09090b',
+        canvas: '#0d0e12',
+        surface: '#121318',
+        'surface-elevated': '#181920',
+        'surface-highlight': '#22242c',
+        neutral: {
+          850: '#181920',
+          900: '#121318',
+          950: '#0d0e12',
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Fira Code', 'Menlo', 'monospace'],
       },
     },
   },

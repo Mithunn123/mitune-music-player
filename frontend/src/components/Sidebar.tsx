@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Search as SearchIcon,
   Sparkles, 
@@ -37,7 +37,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   playlists,
   activePlaylistId,
   onSelectPlaylist,
-  onOpenImport,
   onOpenEqualizer,
   isCollapsed,
   onToggleCollapse,
@@ -46,21 +45,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   return (
     <aside
-      className={`bg-zinc-950/85 backdrop-blur-2xl border-r border-white/5 flex flex-col h-full select-none shrink-0 transition-all duration-300 relative ${
+      className={`bg-[#121318] border-r border-white/10 flex flex-col h-full select-none shrink-0 transition-all duration-300 relative z-30 ${
         isCollapsed ? 'w-20' : 'w-64'
       }`}
     >
       {/* Top Header & Collapse Toggle */}
-      <div className={`p-4 flex items-center border-b border-white/5 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+      <div className={`p-4 flex items-center border-b border-white/10 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
         {!isCollapsed && (
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-bold text-lg tracking-wider">
+            <div className="w-8 h-8 rounded-lg bg-white text-black flex items-center justify-center font-bold text-xs tracking-wider shadow-sm">
               M
             </div>
             <div>
-              <h1 className="text-base font-bold text-white tracking-wide flex items-center gap-1.5">
+              <h1 className="text-sm font-semibold text-white tracking-wide flex items-center gap-2">
                 mitune
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/10 text-neutral-300 border border-white/10">
                   PRO
                 </span>
               </h1>
@@ -69,15 +68,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         {isCollapsed && (
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+          <div className="w-8 h-8 rounded-lg bg-white text-black flex items-center justify-center font-bold text-xs shadow-sm">
             M
           </div>
         )}
 
         <button
           onClick={onToggleCollapse}
-          className={`p-1.5 rounded-xl hover:bg-white/10 text-zinc-400 hover:text-white transition-colors ${
-            isCollapsed ? 'mt-3' : ''
+          className={`p-1.5 rounded-lg hover:bg-white/10 text-neutral-400 hover:text-white transition-colors ${
+            isCollapsed ? 'mt-2' : ''
           }`}
           title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
@@ -85,22 +84,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
-      {/* Main Navigation - Ordered strictly as requested:
-          1. Search (formerly Discover Online) ON TOP
-          2. Recommended For You (AI feed)
+      {/* Main Navigation - Strict 8pt Grid Order:
+          1. Search ON TOP
+          2. Recommended For You
           3. Favorites
           4. Listening History
           5. Settings
-          6. My Library (at the bottom of navigation items)
+          6. My Library
       */}
-      <div className="px-3 py-3 space-y-1">
+      <div className="p-3 space-y-1">
         {/* 1. SEARCH ON TOP */}
         <button
           onClick={() => onSelectTab('discover')}
-          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${
             currentTab === 'discover'
-              ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
-              : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+              ? 'bg-white/10 text-white font-semibold'
+              : 'text-neutral-400 hover:text-white hover:bg-white/[0.04]'
           } ${isCollapsed ? 'justify-center px-0' : ''}`}
           title="Search"
         >
@@ -108,27 +107,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {!isCollapsed && <span>Search</span>}
         </button>
 
-        {/* 2. RECOMMENDED FEED */}
+        {/* 2. RECOMMENDED */}
         <button
           onClick={() => onSelectTab('feed')}
-          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${
             currentTab === 'feed'
-              ? 'bg-gradient-to-r from-indigo-600/30 to-purple-600/20 text-indigo-300 border border-indigo-500/30'
-              : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+              ? 'bg-white/10 text-white font-semibold'
+              : 'text-neutral-400 hover:text-white hover:bg-white/[0.04]'
           } ${isCollapsed ? 'justify-center px-0' : ''}`}
           title="Recommended For You"
         >
-          <Sparkles className="w-4 h-4 text-indigo-400 shrink-0" />
+          <Sparkles className="w-4 h-4 shrink-0" />
           {!isCollapsed && <span>Recommended</span>}
         </button>
 
         {/* 3. FAVORITES */}
         <button
           onClick={() => onSelectTab('favorites')}
-          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${
             currentTab === 'favorites'
-              ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
-              : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+              ? 'bg-white/10 text-white font-semibold'
+              : 'text-neutral-400 hover:text-white hover:bg-white/[0.04]'
           } ${isCollapsed ? 'justify-center px-0' : ''}`}
           title="Favorites"
         >
@@ -139,10 +138,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* 4. HISTORY */}
         <button
           onClick={() => onSelectTab('history')}
-          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${
             currentTab === 'history'
-              ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
-              : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+              ? 'bg-white/10 text-white font-semibold'
+              : 'text-neutral-400 hover:text-white hover:bg-white/[0.04]'
           } ${isCollapsed ? 'justify-center px-0' : ''}`}
           title="History"
         >
@@ -153,10 +152,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* 5. SETTINGS */}
         <button
           onClick={() => onSelectTab('settings')}
-          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${
             currentTab === 'settings'
-              ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
-              : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+              ? 'bg-white/10 text-white font-semibold'
+              : 'text-neutral-400 hover:text-white hover:bg-white/[0.04]'
           } ${isCollapsed ? 'justify-center px-0' : ''}`}
           title="Settings"
         >
@@ -167,10 +166,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* 6. MY LIBRARY AT THE BOTTOM */}
         <button
           onClick={() => onSelectTab('library')}
-          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${
             currentTab === 'library'
-              ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
-              : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+              ? 'bg-white/10 text-white font-semibold'
+              : 'text-neutral-400 hover:text-white hover:bg-white/[0.04]'
           } ${isCollapsed ? 'justify-center px-0' : ''}`}
           title="My Library"
         >
@@ -179,16 +178,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
-      {/* Playlists Section with Create Playlist Place */}
-      <div className="flex-1 overflow-y-auto px-3 py-3 border-t border-white/5 space-y-1">
+      {/* Playlists Section */}
+      <div className="flex-1 overflow-y-auto p-3 border-t border-white/10 space-y-1">
         {!isCollapsed && (
-          <div className="flex items-center justify-between px-3 mb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+          <div className="flex items-center justify-between px-2 mb-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
               Playlists
             </span>
             <button
               onClick={onOpenCreatePlaylist}
-              className="p-1 hover:text-white text-indigo-400 hover:bg-indigo-500/10 rounded-md transition-colors flex items-center gap-1 text-[11px] font-medium"
+              className="p-1 hover:text-white text-neutral-400 hover:bg-white/10 rounded-md transition-colors flex items-center gap-1 text-[11px] font-medium"
               title="Create New Playlist"
             >
               <FolderPlus className="w-3.5 h-3.5" />
@@ -201,7 +200,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex justify-center mb-2">
             <button
               onClick={onOpenCreatePlaylist}
-              className="p-2 text-indigo-400 hover:text-white hover:bg-indigo-500/10 rounded-xl"
+              className="p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded-lg"
               title="Create Playlist"
             >
               <FolderPlus className="w-4 h-4" />
@@ -211,11 +210,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {playlists.length === 0 ? (
           !isCollapsed && (
-            <div className="px-3 py-4 text-xs text-zinc-600 text-center border border-dashed border-white/5 rounded-xl">
-              <p>No playlists created yet.</p>
+            <div className="px-3 py-4 text-xs text-neutral-500 text-center border border-dashed border-white/10 rounded-xl">
+              <p>No playlists yet</p>
               <button
                 onClick={onOpenCreatePlaylist}
-                className="mt-2 text-indigo-400 hover:underline text-xs"
+                className="mt-1.5 text-neutral-300 hover:underline text-xs"
               >
                 + Create Playlist
               </button>
@@ -226,18 +225,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               key={playlist.id}
               onClick={() => onSelectPlaylist(playlist)}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-left truncate transition-all ${
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs text-left truncate transition-all ${
                 activePlaylistId === playlist.id
                   ? 'bg-white/10 text-white font-medium'
-                  : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+                  : 'text-neutral-400 hover:text-white hover:bg-white/[0.04]'
               } ${isCollapsed ? 'justify-center px-0' : ''}`}
               title={playlist.name}
             >
-              <ListMusic className="w-4 h-4 shrink-0 text-zinc-500" />
+              <ListMusic className="w-4 h-4 shrink-0 text-neutral-400" />
               {!isCollapsed && (
                 <>
                   <span className="truncate flex-1">{playlist.name}</span>
-                  <span className="text-[10px] text-zinc-600 font-mono">
+                  <span className="text-[10px] text-neutral-500 font-mono">
                     {playlist.tracks.length}
                   </span>
                 </>
@@ -247,29 +246,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* Footer Controls: Ambient Mode Button, Equalizer, Import */}
-      <div className="p-3 border-t border-white/5 space-y-1.5">
-        {/* AMBIENT MODE BUTTON */}
+      {/* Footer Controls: Ambient Mode Button, Equalizer */}
+      <div className="p-3 border-t border-white/10 space-y-1.5">
         <button
           onClick={onOpenAmbientMode}
-          className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-600/30 to-indigo-600/30 border border-purple-500/40 text-purple-300 hover:bg-purple-600/40 transition-all ${
+          className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-medium bg-[#181920] border border-white/10 text-neutral-200 hover:text-white hover:bg-white/10 transition-all ${
             isCollapsed ? 'justify-center px-0' : ''
           }`}
-          title="Ambient Mode (Full Screen Vinyl CD)"
+          title="Ambient Full-Screen Mode"
         >
-          <Maximize2 className="w-4 h-4 text-purple-400 shrink-0" />
+          <Maximize2 className="w-4 h-4 text-neutral-300 shrink-0" />
           {!isCollapsed && <span>Ambient CD Mode</span>}
         </button>
 
         <button
           onClick={onOpenEqualizer}
-          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-zinc-400 hover:text-white hover:bg-white/5 transition-all ${
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-neutral-400 hover:text-white hover:bg-white/5 transition-all ${
             isCollapsed ? 'justify-center px-0' : ''
           }`}
-          title="Equalizer"
+          title="Audio Equalizer"
         >
-          <Sliders className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-          {!isCollapsed && <span>Audio EQ & Effects</span>}
+          <Sliders className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+          {!isCollapsed && <span>Audio EQ</span>}
         </button>
       </div>
     </aside>

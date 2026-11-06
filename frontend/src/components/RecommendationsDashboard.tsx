@@ -5,13 +5,13 @@ import { Track } from '../types/music';
 import { useAudio } from '../context/AudioContext';
 
 export const RecommendationsDashboard: React.FC = () => {
-  const [headline, setHeadline] = useState('Top Mix For You');
+  const [headline, setHeadline] = useState('Recommended Mix');
   const [forYouTracks, setForYouTracks] = useState<Track[]>([]);
   const [shelves, setShelves] = useState<{ title: string; tracks: Track[] }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeMood, setActiveMood] = useState<string | null>(null);
 
-  const { playTrack, currentTrack, isPlaying, favorites, toggleFavorite } = useAudio();
+  const { playTrack, currentTrack, favorites, toggleFavorite } = useAudio();
 
   const loadFeed = async () => {
     setIsLoading(true);
@@ -46,18 +46,23 @@ export const RecommendationsDashboard: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-16">
-      {/* Minimal Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-white/5">
-        <h2 className="text-xl font-bold text-white tracking-tight">
-          {headline}
-        </h2>
+    <div className="space-y-8 max-w-6xl mx-auto pb-16">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-4 border-b border-white/10">
+        <div>
+          <h2 className="text-xl font-bold text-white tracking-tight">
+            {headline}
+          </h2>
+          <p className="text-xs text-neutral-400 mt-0.5">
+            Personalized studio tracks curated from your listening taste
+          </p>
+        </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {forYouTracks.length > 0 && (
             <button
               onClick={() => playTrack(forYouTracks[0], forYouTracks)}
-              className="px-4 py-1.5 rounded-full bg-white text-black font-semibold text-xs hover:bg-zinc-200 transition-colors"
+              className="px-4 py-1.5 rounded-full bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition-colors"
             >
               Play All
             </button>
@@ -65,24 +70,24 @@ export const RecommendationsDashboard: React.FC = () => {
 
           <button
             onClick={loadFeed}
-            className="p-1.5 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
-            title="Refresh"
+            className="p-2 rounded-lg hover:bg-white/10 text-neutral-400 hover:text-white transition-colors"
+            title="Refresh Feed"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
 
-      {/* Mood Filters */}
+      {/* Mood Filters: 8pt grid, dark neutral pills */}
       <div className="flex gap-2 flex-wrap">
         {TRENDING_SEEDS.map((seed) => (
           <button
             key={seed.tag}
             onClick={() => handleMoodSelect(seed)}
-            className={`px-3 py-1 rounded-full text-xs transition-colors ${
+            className={`px-3 py-1.5 rounded-full text-xs transition-all ${
               activeMood === seed.tag
                 ? 'bg-white text-black font-semibold'
-                : 'bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800'
+                : 'bg-[#121318] border border-white/10 text-neutral-400 hover:text-white hover:bg-[#181920]'
             }`}
           >
             {seed.tag}
@@ -90,7 +95,7 @@ export const RecommendationsDashboard: React.FC = () => {
         ))}
       </div>
 
-      {/* Clean Grid */}
+      {/* Grid of 1:1 Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {forYouTracks.map((track) => {
           const isCurrent = currentTrack?.id === track.id;
@@ -100,9 +105,10 @@ export const RecommendationsDashboard: React.FC = () => {
             <div
               key={track.id}
               onClick={() => playTrack(track, forYouTracks)}
-              className="group p-2 rounded-xl bg-zinc-900/30 hover:bg-zinc-900 transition-colors cursor-pointer"
+              className="group p-3 rounded-2xl bg-[#121318] hover:bg-[#181920] border border-white/10 hover:border-white/20 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
             >
-              <div className="relative aspect-square rounded-lg overflow-hidden bg-zinc-800 mb-2">
+              {/* 1:1 Artwork */}
+              <div className="relative aspect-square rounded-xl overflow-hidden bg-[#181920] mb-2.5 border border-white/5">
                 <img
                   src={track.albumArt || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80'}
                   alt={track.title}
@@ -118,7 +124,7 @@ export const RecommendationsDashboard: React.FC = () => {
                     isCurrent ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                   }`}
                 >
-                  <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow">
+                  <div className="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center shadow-lg">
                     <Play className="w-4 h-4 fill-black translate-x-0.5" />
                   </div>
                 </div>
@@ -128,17 +134,19 @@ export const RecommendationsDashboard: React.FC = () => {
                     e.stopPropagation();
                     toggleFavorite(track.id);
                   }}
-                  className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:scale-105 active:scale-95"
                   style={{ opacity: isFav ? 1 : undefined }}
+                  title="Favorite"
                 >
                   <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-red-500 text-red-500' : ''}`} />
                 </button>
               </div>
 
-              <p className={`text-xs font-semibold truncate ${isCurrent ? 'text-indigo-400' : 'text-zinc-100'}`}>
+              {/* Left-Aligned Metadata */}
+              <p className={`text-xs font-medium truncate ${isCurrent ? 'text-white font-semibold' : 'text-neutral-200'}`}>
                 {track.title}
               </p>
-              <p className="text-[11px] text-zinc-500 truncate mt-0.5">
+              <p className="text-[11px] text-neutral-400 truncate mt-0.5">
                 {track.artist}
               </p>
             </div>
@@ -148,12 +156,12 @@ export const RecommendationsDashboard: React.FC = () => {
 
       {/* Shelves */}
       {shelves.map((shelf, i) => (
-        <div key={i} className="space-y-3 pt-4 border-t border-white/5">
+        <div key={i} className="space-y-4 pt-4 border-t border-white/10">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-zinc-300">{shelf.title}</h3>
+            <h3 className="text-sm font-semibold text-white tracking-tight">{shelf.title}</h3>
             <button
               onClick={() => playTrack(shelf.tracks[0], shelf.tracks)}
-              className="text-xs text-zinc-400 hover:text-white"
+              className="text-xs text-neutral-400 hover:text-white transition-colors"
             >
               Play all
             </button>
@@ -164,9 +172,9 @@ export const RecommendationsDashboard: React.FC = () => {
               <div
                 key={track.id}
                 onClick={() => playTrack(track, shelf.tracks)}
-                className="group p-2 rounded-xl bg-zinc-900/20 hover:bg-zinc-900 cursor-pointer"
+                className="group p-2.5 rounded-2xl bg-[#121318] hover:bg-[#181920] border border-white/10 hover:border-white/20 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
               >
-                <div className="relative aspect-square rounded-lg overflow-hidden bg-zinc-800 mb-1.5">
+                <div className="relative aspect-square rounded-xl overflow-hidden bg-[#181920] mb-2 border border-white/5">
                   <img
                     src={track.albumArt || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80'}
                     alt={track.title}
@@ -180,8 +188,8 @@ export const RecommendationsDashboard: React.FC = () => {
                     <Play className="w-4 h-4 fill-white text-white" />
                   </div>
                 </div>
-                <p className="text-xs font-medium text-zinc-200 truncate">{track.title}</p>
-                <p className="text-[10px] text-zinc-500 truncate">{track.artist}</p>
+                <p className="text-xs font-medium text-neutral-200 truncate">{track.title}</p>
+                <p className="text-[10px] text-neutral-500 truncate">{track.artist}</p>
               </div>
             ))}
           </div>

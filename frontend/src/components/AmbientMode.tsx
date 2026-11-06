@@ -7,9 +7,11 @@ import {
   SkipForward, 
   Volume2, 
   VolumeX, 
-  Heart,
-  Repeat,
-  Shuffle
+  Heart, 
+  Repeat, 
+  Shuffle, 
+  Disc, 
+  Image as ImageIcon 
 } from 'lucide-react';
 import { useAudio } from '../context/AudioContext';
 
@@ -41,11 +43,12 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose }) => 
     toggleRepeat,
   } = useAudio();
 
+  const [displayMode, setDisplayMode] = useState<'cd' | 'artwork'>('artwork');
   const [beatPhase, setBeatPhase] = useState(0);
   const [imgError, setImgError] = useState(false);
   const animFrameRef = useRef<number | null>(null);
 
-  // Audio beat visualizer pulse animation loop
+  // Audio beat visualizer pulse loop
   useEffect(() => {
     if (!isOpen) return;
 
@@ -53,7 +56,6 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose }) => 
     const animate = (time: number) => {
       if (isPlaying) {
         const elapsed = (time - startTime) / 1000;
-        // ~120 BPM pulsing cycle
         setBeatPhase(elapsed * 2 * Math.PI * 2);
       }
       animFrameRef.current = requestAnimationFrame(animate);
@@ -101,235 +103,298 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose }) => 
   const BAR_COUNT = 48;
   const visualizerBars = Array.from({ length: BAR_COUNT }, (_, i) => {
     const angle = (i / BAR_COUNT) * 360;
-    // Harmonically modulated heights to simulate authentic audio equalizer
     const wave1 = Math.sin(beatPhase + i * 0.4);
     const wave2 = Math.cos(beatPhase * 0.7 + i * 0.8);
-    const height = isPlaying ? Math.max(6, Math.min(32, 14 + wave1 * 9 + wave2 * 7)) : 4;
-    const opacity = isPlaying ? 0.7 + (wave1 + 1) * 0.15 : 0.25;
+    const height = isPlaying ? Math.max(6, Math.min(28, 12 + wave1 * 8 + wave2 * 6)) : 4;
+    const opacity = isPlaying ? 0.6 + (wave1 + 1) * 0.2 : 0.25;
 
     return { angle, height, opacity };
   });
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#070709] flex flex-col justify-between overflow-hidden select-none">
-      {/* 1. Ambient Background: Vibrant Glow Mesh + Radial Vignette (100% crash-free, zero heavy CSS blur filters) */}
+    <div className="fixed inset-0 z-50 bg-[#0d0e12] flex flex-col justify-between overflow-hidden select-none">
+      {/* Subtle Atmospheric Backdrop (Clean, 100% crash-free, zero neon gradients) */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Soft background art texture */}
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-20 scale-105 transition-all duration-1000"
+          className="absolute inset-0 bg-cover bg-center opacity-15 scale-105 transition-all duration-1000"
           style={{ backgroundImage: `url("${albumArt}")` }}
         />
-
-        {/* Ambient atmospheric radial glow cones */}
-        <div
-          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] rounded-full transition-all duration-1000 ${
-            isPlaying ? 'opacity-40 scale-110' : 'opacity-15 scale-95'
-          }`}
-          style={{
-            background:
-              'radial-gradient(circle, rgba(99, 102, 241, 0.45) 0%, rgba(168, 85, 247, 0.3) 40%, rgba(236, 72, 153, 0.15) 70%, transparent 100%)',
-          }}
-        />
-
-        {/* Deep dark vignette border so edges blend seamlessly */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#070709] via-transparent to-[#070709]/80" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#070709]/90 via-transparent to-[#070709]/90" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0d0e12] via-[#0d0e12]/80 to-[#0d0e12]/95" />
       </div>
 
       {/* Top Header Bar */}
-      <div className="relative z-10 px-8 py-6 flex items-center justify-between">
+      <div className="relative z-10 px-6 sm:px-8 py-5 flex items-center justify-between border-b border-white/5">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs shadow-lg shadow-indigo-500/20">
+          <div className="w-8 h-8 rounded-lg bg-white text-black flex items-center justify-center font-bold text-xs tracking-wider shadow-sm">
             M
           </div>
           <div>
             <span className="text-xs font-semibold tracking-wider text-white uppercase">
-              Ambient Mode
+              Full-Screen Player
             </span>
-            <span className="text-[10px] text-zinc-400 block font-mono">
-              Hi-Fi Studio Disc
+            <span className="text-[10px] text-neutral-400 block font-mono">
+              Hi-Fi Studio Engine
             </span>
           </div>
         </div>
 
-        <button
-          onClick={onClose}
-          className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all hover:scale-105 active:scale-95"
-          title="Exit Ambient Mode (ESC)"
-        >
-          <X className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Center Stage: Spinning CD with Synchronized Audio Visualizer Beat Ring */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4">
-        <div className="relative flex items-center justify-center">
-          {/* Synchronized Circular Audio Beat Equalizer (Surrounds the CD) */}
-          <div className="absolute w-[330px] h-[330px] sm:w-[440px] sm:h-[440px] flex items-center justify-center pointer-events-none">
-            {visualizerBars.map((bar, idx) => (
-              <div
-                key={idx}
-                className="absolute w-1 rounded-full transition-all duration-75"
-                style={{
-                  height: `${bar.height}px`,
-                  opacity: bar.opacity,
-                  background: 'linear-gradient(to top, #818cf8, #c084fc, #f472b6)',
-                  transform: `rotate(${bar.angle}deg) translateY(-${150 + (bar.height / 2)}px)`,
-                  boxShadow: isPlaying ? '0 0 8px rgba(168, 85, 247, 0.6)' : 'none',
-                }}
-              />
-            ))}
+        {/* View Toggle (1:1 Artwork vs Vinyl CD) and Close Button */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-[#181920] border border-white/10 rounded-xl p-1">
+            <button
+              onClick={() => setDisplayMode('artwork')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                displayMode === 'artwork'
+                  ? 'bg-white text-black'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+              title="1:1 Artwork Mode"
+            >
+              <ImageIcon className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Cover</span>
+            </button>
+            <button
+              onClick={() => setDisplayMode('cd')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                displayMode === 'cd'
+                  ? 'bg-white text-black'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+              title="Vinyl CD Mode"
+            >
+              <Disc className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Vinyl</span>
+            </button>
           </div>
 
-          {/* Vinyl / CD Outer Disc Body */}
-          <div
-            className={`w-64 h-64 sm:w-80 sm:h-80 rounded-full bg-[#111114] border-[4px] border-zinc-700/80 shadow-[0_0_60px_rgba(0,0,0,0.9)] flex items-center justify-center relative overflow-hidden transition-transform duration-700 ${
-              isPlaying ? 'animate-spin' : ''
-            }`}
-            style={{ animationDuration: '12s' }}
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all hover:scale-105 active:scale-95"
+            title="Exit Full-Screen (ESC)"
           >
-            {/* Concentric Vinyl Grooves */}
-            <div className="absolute inset-3 rounded-full border border-white/[0.04] pointer-events-none" />
-            <div className="absolute inset-8 rounded-full border border-white/[0.05] pointer-events-none" />
-            <div className="absolute inset-14 rounded-full border border-white/[0.04] pointer-events-none" />
-            <div className="absolute inset-20 rounded-full border border-white/[0.05] pointer-events-none" />
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
 
-            {/* Specular Iridescent Reflection Sheen */}
-            <div
-              className="absolute inset-0 pointer-events-none opacity-30"
-              style={{
-                background:
-                  'conic-gradient(from 45deg, transparent 0deg, rgba(255,255,255,0.15) 60deg, transparent 120deg, transparent 180deg, rgba(255,255,255,0.15) 240deg, transparent 300deg)',
-              }}
-            />
-
-            {/* Center Album Art Label */}
-            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full overflow-hidden border-[3px] border-zinc-900 shadow-2xl relative bg-zinc-900 flex items-center justify-center">
+      {/* Center Stage */}
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 max-w-4xl mx-auto w-full">
+        {displayMode === 'artwork' ? (
+          /* ========================================================
+             MODE A: 1:1 artwork (rounded-2xl with subtle 1px border),
+             left-aligned metadata
+             ======================================================== */
+          <div className="w-full max-w-md flex flex-col items-center sm:items-start space-y-6 animate-in fade-in zoom-in-95 duration-200">
+            {/* 1:1 Artwork */}
+            <div className="w-64 h-64 sm:w-80 sm:h-80 aspect-square rounded-2xl overflow-hidden bg-[#181920] border border-white/10 shadow-2xl relative group">
               <img
                 src={albumArt}
-                alt={currentTrack?.title || 'Album Art'}
+                alt={currentTrack?.title || 'Track Artwork'}
                 referrerPolicy="no-referrer"
                 onError={() => setImgError(true)}
                 className="w-full h-full object-cover"
               />
+            </div>
 
-              {/* Center Spindle Hole */}
-              <div className="absolute inset-0 m-auto w-6 h-6 rounded-full bg-[#070709] border-[3px] border-white/60 shadow-inner flex items-center justify-center">
-                <div className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
+            {/* Left-Aligned Metadata */}
+            <div className="w-full text-center sm:text-left">
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight truncate">
+                    {currentTrack?.title || 'No Track Selected'}
+                  </h2>
+                  <p className="text-sm sm:text-base text-neutral-400 mt-1 truncate">
+                    {currentTrack?.artist || 'Ready to play'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => currentTrack && toggleFavorite(currentTrack.id)}
+                  className="p-2 text-neutral-400 hover:text-white hover:scale-105 active:scale-95 transition-all shrink-0"
+                  title="Favorite"
+                >
+                  <Heart className={`w-5 h-5 ${isFav ? 'fill-red-500 text-red-500' : ''}`} />
+                </button>
               </div>
+
+              {currentTrack?.album && (
+                <div className="mt-3">
+                  <span className="inline-block px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-xs font-mono text-neutral-400">
+                    {currentTrack.album}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        ) : (
+          /* ========================================================
+             MODE B: Realistic Vinyl CD with Synchronized Audio Beat Ring
+             ======================================================== */
+          <div className="flex flex-col items-center justify-center space-y-8 animate-in fade-in zoom-in-95 duration-200">
+            <div className="relative flex items-center justify-center">
+              {/* Circular Audio Equalizer Beat Ring */}
+              <div className="absolute w-[320px] h-[320px] sm:w-[420px] sm:h-[420px] flex items-center justify-center pointer-events-none">
+                {visualizerBars.map((bar, idx) => (
+                  <div
+                    key={idx}
+                    className="absolute w-1 rounded-full transition-all duration-75 bg-white"
+                    style={{
+                      height: `${bar.height}px`,
+                      opacity: bar.opacity,
+                      transform: `rotate(${bar.angle}deg) translateY(-${145 + (bar.height / 2)}px)`,
+                    }}
+                  />
+                ))}
+              </div>
 
-        {/* Minimalist Track Details */}
-        <div className="mt-9 text-center max-w-lg px-4">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white truncate tracking-tight">
-            {currentTrack?.title || 'No Track Selected'}
-          </h2>
-          <p className="text-zinc-400 text-sm mt-1 truncate font-medium">
-            {currentTrack?.artist || 'Select a song to start'}
-          </p>
-          {currentTrack?.album && (
-            <span className="inline-block mt-2 px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-[11px] text-zinc-400">
-              {currentTrack.album}
-            </span>
-          )}
-        </div>
+              {/* Vinyl / CD Outer Disc Body */}
+              <div
+                className={`w-64 h-64 sm:w-76 sm:h-76 rounded-full bg-[#121318] border-[3px] border-white/15 shadow-[0_0_50px_rgba(0,0,0,0.9)] flex items-center justify-center relative overflow-hidden transition-transform duration-700 ${
+                  isPlaying ? 'animate-spin' : ''
+                }`}
+                style={{ animationDuration: '12s' }}
+              >
+                {/* Concentric Grooves */}
+                <div className="absolute inset-3 rounded-full border border-white/[0.04] pointer-events-none" />
+                <div className="absolute inset-8 rounded-full border border-white/[0.05] pointer-events-none" />
+                <div className="absolute inset-14 rounded-full border border-white/[0.04] pointer-events-none" />
+                <div className="absolute inset-20 rounded-full border border-white/[0.05] pointer-events-none" />
+
+                {/* Iridescent Specular Sheen */}
+                <div
+                  className="absolute inset-0 pointer-events-none opacity-20"
+                  style={{
+                    background:
+                      'conic-gradient(from 45deg, transparent 0deg, rgba(255,255,255,0.2) 60deg, transparent 120deg, transparent 180deg, rgba(255,255,255,0.2) 240deg, transparent 300deg)',
+                  }}
+                />
+
+                {/* Center Label */}
+                <div className="w-28 h-28 sm:w-34 sm:h-34 rounded-full overflow-hidden border-[2px] border-black shadow-2xl relative bg-[#181920] flex items-center justify-center">
+                  <img
+                    src={albumArt}
+                    alt={currentTrack?.title || 'Album Art'}
+                    referrerPolicy="no-referrer"
+                    onError={() => setImgError(true)}
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Spindle hole */}
+                  <div className="absolute inset-0 m-auto w-6 h-6 rounded-full bg-[#0d0e12] border-[2px] border-white/60 shadow-inner flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-neutral-400" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Track Info */}
+            <div className="text-center max-w-lg px-4">
+              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight truncate">
+                {currentTrack?.title || 'No Track Selected'}
+              </h2>
+              <p className="text-sm text-neutral-400 mt-1 truncate">
+                {currentTrack?.artist || 'Ready to play'}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Bottom Minimalist Controls Bar */}
+      {/* Bottom Ergonomic Thumb-Zone Controls Bar */}
       <div className="relative z-10 px-6 sm:px-8 pb-10 max-w-xl mx-auto w-full space-y-4">
-        {/* Seekbar */}
-        <div
-          className="w-full h-3 cursor-pointer relative flex items-center group"
-          onClick={(e) => {
-            if (!duration) return;
-            const rect = e.currentTarget.getBoundingClientRect();
-            const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-            seek(ratio * duration);
-          }}
-        >
-          <div className="w-full h-1 bg-white/15 rounded-full overflow-hidden group-hover:h-1.5 transition-all">
-            <div
-              className="h-full bg-gradient-to-r from-indigo-500 to-purple-400 rounded-full"
-              style={{ width: `${progressPercent}%` }}
-            />
+        {/* Full-width Scrubber Bar Flanked by Monospace Timestamps with tabular-nums */}
+        <div className="w-full flex items-center gap-3">
+          <span className="text-xs font-mono tabular-nums text-neutral-400 select-none w-10 text-right">
+            {formatTime(currentTime)}
+          </span>
+
+          <div
+            className="flex-1 h-3 cursor-pointer relative flex items-center group"
+            onClick={(e) => {
+              if (!duration) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+              seek(ratio * duration);
+            }}
+          >
+            <div className="w-full h-1 group-hover:h-1.5 transition-all bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-white rounded-full transition-all"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
           </div>
+
+          <span className="text-xs font-mono tabular-nums text-neutral-400 select-none w-10 text-left">
+            {formatTime(duration)}
+          </span>
         </div>
 
-        {/* Timestamps */}
-        <div className="flex items-center justify-between text-xs text-zinc-400 font-mono">
-          <span>{formatTime(currentTime)}</span>
-          <span>{formatTime(duration)}</span>
-        </div>
-
-        {/* Control Buttons */}
-        <div className="flex items-center justify-between pt-1">
-          <div className="flex items-center gap-1 sm:gap-2">
-            <button
-              onClick={() => currentTrack && toggleFavorite(currentTrack.id)}
-              className="p-2.5 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
-              title="Favorite"
-            >
-              <Heart className={`w-5 h-5 ${isFav ? 'fill-red-500 text-red-500' : ''}`} />
-            </button>
+        {/* Ergonomic Controls: Shuffle, Previous, 44px Solid Play/Pause, Next, Repeat, Volume */}
+        <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center gap-2">
             <button
               onClick={toggleShuffle}
-              className={`p-2.5 rounded-full transition-colors ${
-                isShuffle ? 'text-white bg-white/20' : 'text-zinc-400 hover:text-white'
+              className={`p-2.5 rounded-xl hover:scale-105 active:scale-95 transition-all ${
+                isShuffle ? 'text-white bg-white/15' : 'text-neutral-400 hover:text-white'
               }`}
               title="Shuffle"
             >
-              <Shuffle className="w-5 h-5" />
+              <Shuffle className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => currentTrack && toggleFavorite(currentTrack.id)}
+              className="p-2.5 rounded-xl text-neutral-400 hover:text-white hover:scale-105 active:scale-95 transition-all"
+              title="Favorite"
+            >
+              <Heart className={`w-4 h-4 ${isFav ? 'fill-red-500 text-red-500' : ''}`} />
             </button>
           </div>
 
           <div className="flex items-center gap-4">
             <button
               onClick={previousTrack}
-              className="p-3 rounded-full hover:bg-white/10 text-white transition-all hover:scale-110 active:scale-95"
+              className="p-2.5 rounded-full text-neutral-300 hover:text-white hover:scale-110 active:scale-95 transition-all"
               title="Previous"
             >
-              <SkipBack className="w-6 h-6" />
+              <SkipBack className="w-5 h-5 fill-current" />
             </button>
 
             <button
               onClick={togglePlay}
-              className="p-4 rounded-full bg-white text-black hover:scale-105 active:scale-95 transition-transform shadow-xl shadow-white/10 flex items-center justify-center"
+              className="p-3.5 sm:p-4 rounded-full bg-white text-black hover:scale-105 active:scale-95 transition-transform shadow-xl flex items-center justify-center shrink-0"
               title={isPlaying ? 'Pause' : 'Play'}
             >
               {isPlaying ? (
-                <Pause className="w-7 h-7 fill-black" />
+                <Pause className="w-6 h-6 fill-black" />
               ) : (
-                <Play className="w-7 h-7 fill-black translate-x-0.5" />
+                <Play className="w-6 h-6 fill-black translate-x-0.5" />
               )}
             </button>
 
             <button
               onClick={nextTrack}
-              className="p-3 rounded-full hover:bg-white/10 text-white transition-all hover:scale-110 active:scale-95"
+              className="p-2.5 rounded-full text-neutral-300 hover:text-white hover:scale-110 active:scale-95 transition-all"
               title="Next"
             >
-              <SkipForward className="w-6 h-6" />
+              <SkipForward className="w-5 h-5 fill-current" />
             </button>
           </div>
 
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-2">
             <button
               onClick={toggleRepeat}
-              className={`p-2.5 rounded-full transition-colors ${
-                repeatMode !== 'off' ? 'text-white bg-white/20' : 'text-zinc-400 hover:text-white'
+              className={`p-2.5 rounded-xl hover:scale-105 active:scale-95 transition-all ${
+                repeatMode !== 'off' ? 'text-white bg-white/15' : 'text-neutral-400 hover:text-white'
               }`}
               title={`Repeat: ${repeatMode}`}
             >
-              <Repeat className="w-5 h-5" />
+              <Repeat className="w-4 h-4" />
             </button>
             <button
               onClick={() => setVolume(volume === 0 ? 0.8 : 0)}
-              className="p-2.5 rounded-full text-zinc-400 hover:text-white transition-colors"
+              className="p-2.5 rounded-xl text-neutral-400 hover:text-white hover:scale-105 active:scale-95 transition-all"
               title={volume === 0 ? 'Unmute' : 'Mute'}
             >
-              {volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+              {volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
             </button>
           </div>
         </div>

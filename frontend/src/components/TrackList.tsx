@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Pause, Heart, Clock, MoreVertical, Music } from 'lucide-react';
+import { Play, Heart, Clock, MoreVertical, Music } from 'lucide-react';
 import { Track } from '../types/music';
 import { useAudio } from '../context/AudioContext';
 
@@ -12,7 +12,6 @@ interface TrackListProps {
 export const TrackList: React.FC<TrackListProps> = ({
   tracks,
   onTrackSelect,
-  playlistContextTracks,
 }) => {
   const { currentTrack, isPlaying, favorites, toggleFavorite, addToQueue } = useAudio();
 
@@ -25,11 +24,11 @@ export const TrackList: React.FC<TrackListProps> = ({
 
   if (!tracks || tracks.length === 0) {
     return (
-      <div className="py-16 text-center text-zinc-500 flex flex-col items-center justify-center">
-        <Music className="w-12 h-12 stroke-[1.5] text-zinc-600 mb-3" />
-        <p className="text-zinc-400 font-medium text-base">No tracks found</p>
-        <p className="text-zinc-600 text-sm mt-1 max-w-sm">
-          Import local audio files, search for online streaming tracks, or paste a playlist link to get started.
+      <div className="py-16 text-center text-neutral-500 flex flex-col items-center justify-center">
+        <Music className="w-10 h-10 stroke-[1.5] text-neutral-600 mb-3" />
+        <p className="text-neutral-400 font-medium text-sm">No tracks found</p>
+        <p className="text-neutral-600 text-xs mt-1 max-w-sm">
+          Import local audio files or search for songs to get started.
         </p>
       </div>
     );
@@ -38,10 +37,10 @@ export const TrackList: React.FC<TrackListProps> = ({
   return (
     <div className="w-full space-y-1">
       {/* Header bar */}
-      <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider border-b border-white/5">
+      <div className="grid grid-cols-12 gap-4 px-4 py-2 text-[11px] font-mono font-medium text-neutral-500 uppercase tracking-wider border-b border-white/10">
         <div className="col-span-1 text-center">#</div>
         <div className="col-span-6 md:col-span-5">Title</div>
-        <div className="hidden md:block md:col-span-4">Album / Source</div>
+        <div className="hidden md:block md:col-span-4">Album / Release</div>
         <div className="col-span-5 md:col-span-2 flex justify-end items-center pr-4">
           <Clock className="w-3.5 h-3.5" />
         </div>
@@ -58,22 +57,22 @@ export const TrackList: React.FC<TrackListProps> = ({
               key={track.id}
               className={`group grid grid-cols-12 gap-4 items-center px-4 py-2.5 rounded-xl transition-all cursor-pointer ${
                 isCurrent
-                  ? 'bg-indigo-600/15 border border-indigo-500/20 text-white'
-                  : 'hover:bg-white/[0.04] text-zinc-300 hover:text-white'
+                  ? 'bg-white/10 border border-white/10 text-white'
+                  : 'hover:bg-white/[0.04] text-neutral-300 hover:text-white'
               }`}
               onClick={() => onTrackSelect(track)}
             >
-              {/* Number / Play Button */}
+              {/* Number / Play Indicator */}
               <div className="col-span-1 flex items-center justify-center">
                 {isCurrent && isPlaying ? (
                   <div className="flex items-end gap-0.5 h-3">
-                    <span className="w-0.5 h-full bg-indigo-400 animate-pulse" />
-                    <span className="w-0.5 h-2 bg-indigo-400 animate-pulse delay-75" />
-                    <span className="w-0.5 h-full bg-indigo-400 animate-pulse delay-150" />
+                    <span className="w-0.5 h-full bg-white animate-pulse" />
+                    <span className="w-0.5 h-2 bg-white animate-pulse delay-75" />
+                    <span className="w-0.5 h-full bg-white animate-pulse delay-150" />
                   </div>
                 ) : (
                   <>
-                    <span className="group-hover:hidden text-zinc-500 text-xs font-mono">
+                    <span className="group-hover:hidden text-neutral-500 text-xs font-mono tabular-nums">
                       {index + 1}
                     </span>
                     <Play className="hidden group-hover:block w-3.5 h-3.5 text-white fill-white" />
@@ -90,62 +89,57 @@ export const TrackList: React.FC<TrackListProps> = ({
                   onError={(e) => {
                     e.currentTarget.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=80&auto=format&fit=crop&q=80';
                   }}
-                  className="w-10 h-10 rounded-lg object-cover bg-zinc-800 shrink-0 border border-white/5"
+                  className="w-10 h-10 rounded-lg object-cover bg-[#181920] shrink-0 border border-white/10"
                 />
                 <div className="truncate pr-2">
-                  <p className={`text-sm font-medium truncate ${isCurrent ? 'text-indigo-400 font-semibold' : ''}`}>
+                  <p className={`text-sm font-medium truncate ${isCurrent ? 'text-white font-semibold' : ''}`}>
                     {track.title}
                   </p>
-                  <p className="text-xs text-zinc-500 truncate mt-0.5">
+                  <p className="text-xs text-neutral-400 truncate mt-0.5">
                     {track.artist}
                   </p>
                 </div>
               </div>
 
-              {/* Album / Source */}
-              <div className="hidden md:block md:col-span-4 text-xs text-zinc-400 truncate">
+              {/* Album / Release */}
+              <div className="hidden md:block md:col-span-4 text-xs text-neutral-400 truncate">
                 <span className="truncate">{track.album || 'Single'}</span>
                 {track.source === 'local' && (
-                  <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-neutral-300 border border-white/10 font-mono">
                     Local
-                  </span>
-                )}
-                {track.source === 'piped' && (
-                  <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20">
-                    Stream
                   </span>
                 )}
               </div>
 
               {/* Duration & Actions */}
-              <div className="col-span-5 md:col-span-2 flex items-center justify-end gap-3 text-xs text-zinc-400">
+              <div className="col-span-5 md:col-span-2 flex items-center justify-end gap-3 text-xs text-neutral-400">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleFavorite(track.id);
                   }}
-                  className="opacity-0 group-hover:opacity-100 p-1.5 hover:text-red-400 transition-all"
+                  className="opacity-0 group-hover:opacity-100 p-1.5 hover:text-red-400 hover:scale-105 active:scale-95 transition-all"
                   style={{ opacity: isFav ? 1 : undefined }}
                   title="Favorite"
                 >
                   <Heart
                     className={`w-4 h-4 ${
-                      isFav ? 'fill-red-500 text-red-500' : 'text-zinc-500'
+                      isFav ? 'fill-red-500 text-red-500' : 'text-neutral-400'
                     }`}
                   />
                 </button>
 
-                <span className="font-mono text-zinc-500">{formatDuration(track.duration)}</span>
+                <span className="font-mono tabular-nums text-neutral-400">{formatDuration(track.duration)}</span>
 
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     addToQueue(track);
                   }}
-                  className="opacity-0 group-hover:opacity-100 p-1 hover:text-white transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 p-1 hover:text-white hover:scale-105 active:scale-95 transition-all"
                   title="Add to queue"
                 >
-                  <MoreVertical className="w-4 h-4 text-zinc-500" />
+                  <MoreVertical className="w-4 h-4 text-neutral-400" />
                 </button>
               </div>
             </div>
