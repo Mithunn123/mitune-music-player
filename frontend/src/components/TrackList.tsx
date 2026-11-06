@@ -86,6 +86,10 @@ export const TrackList: React.FC<TrackListProps> = ({
                 <img
                   src={track.albumArt || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=80&auto=format&fit=crop&q=80'}
                   alt={track.title}
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=80&auto=format&fit=crop&q=80';
+                  }}
                   className="w-10 h-10 rounded-lg object-cover bg-zinc-800 shrink-0 border border-white/5"
                 />
                 <div className="truncate pr-2">

@@ -83,6 +83,10 @@ export const AudioTimeline: React.FC<AudioTimelineProps> = ({
               <img
                 src={currentTrack.albumArt || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&auto=format&fit=crop&q=80'}
                 alt={currentTrack.title}
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  e.currentTarget.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&auto=format&fit=crop&q=80';
+                }}
                 className="w-10 h-10 rounded-lg object-cover bg-zinc-900 border border-white/5 shrink-0"
               />
               <div className="overflow-hidden">

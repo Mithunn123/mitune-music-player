@@ -104,8 +104,12 @@ export const RecommendationsDashboard: React.FC = () => {
             >
               <div className="relative aspect-square rounded-lg overflow-hidden bg-zinc-800 mb-2">
                 <img
-                  src={track.albumArt}
+                  src={track.albumArt || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80'}
                   alt={track.title}
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80';
+                  }}
                   className="w-full h-full object-cover"
                 />
 
@@ -164,8 +168,12 @@ export const RecommendationsDashboard: React.FC = () => {
               >
                 <div className="relative aspect-square rounded-lg overflow-hidden bg-zinc-800 mb-1.5">
                   <img
-                    src={track.albumArt}
+                    src={track.albumArt || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80'}
                     alt={track.title}
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80';
+                    }}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">

@@ -86,8 +86,12 @@ export const DiscoverView: React.FC = () => {
                 >
                   <div className="relative aspect-square rounded-lg overflow-hidden bg-zinc-800 mb-2">
                     <img
-                      src={track.albumArt}
+                      src={track.albumArt || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80'}
                       alt={track.title}
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80';
+                      }}
                       className="w-full h-full object-cover"
                     />
                     <div

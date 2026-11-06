@@ -21,6 +21,7 @@ import { RecommendationsDashboard } from './components/RecommendationsDashboard'
 import { SettingsView } from './components/SettingsView';
 import { CreatePlaylistModal } from './components/CreatePlaylistModal';
 import { AmbientMode } from './components/AmbientMode';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { AudioProvider, useAudio } from './context/AudioContext';
 import { storageService } from './services/storageService';
 import { Track, Playlist } from './types/music';
@@ -30,7 +31,7 @@ const DEMO_TRACKS: Track[] = [
   {
     id: 'yt-fHI8X4OXluQ',
     youtubeId: 'fHI8X4OXluQ',
-    title: 'The Weeknd - Blinding Lights (Official Audio)',
+    title: 'Blinding Lights',
     artist: 'The Weeknd',
     album: 'After Hours',
     duration: 200,
@@ -42,7 +43,7 @@ const DEMO_TRACKS: Track[] = [
   {
     id: 'yt-yKNxeF4KMsY',
     youtubeId: 'yKNxeF4KMsY',
-    title: 'Coldplay - Yellow (Official Video)',
+    title: 'Yellow',
     artist: 'Coldplay',
     album: 'Parachutes',
     duration: 269,
@@ -54,7 +55,7 @@ const DEMO_TRACKS: Track[] = [
   {
     id: 'yt-V9PVRfjEBTI',
     youtubeId: 'V9PVRfjEBTI',
-    title: 'Billie Eilish - BIRDS OF A FEATHER (Official Video)',
+    title: 'BIRDS OF A FEATHER',
     artist: 'Billie Eilish',
     album: 'HIT ME HARD AND SOFT',
     duration: 231,
@@ -342,11 +343,13 @@ const MainApp: React.FC = () => {
         onClose={() => setIsQueueOpen(false)}
       />
 
-      {/* Full Screen Ambient Vinyl Mode */}
-      <AmbientMode
-        isOpen={isAmbientModeOpen}
-        onClose={() => setIsAmbientModeOpen(false)}
-      />
+      {/* Full Screen Ambient Vinyl Mode with isolated ErrorBoundary */}
+      <ErrorBoundary>
+        <AmbientMode
+          isOpen={isAmbientModeOpen}
+          onClose={() => setIsAmbientModeOpen(false)}
+        />
+      </ErrorBoundary>
 
       {/* Headless Global Full-Track YouTube Streaming Mount */}
       <div
@@ -368,8 +371,10 @@ const MainApp: React.FC = () => {
 
 export const App: React.FC = () => {
   return (
-    <AudioProvider>
-      <MainApp />
-    </AudioProvider>
+    <ErrorBoundary>
+      <AudioProvider>
+        <MainApp />
+      </AudioProvider>
+    </ErrorBoundary>
   );
 };
