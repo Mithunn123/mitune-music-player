@@ -20,6 +20,7 @@ import { DiscoverView } from './components/DiscoverView';
 import { RecommendationsDashboard } from './components/RecommendationsDashboard';
 import { SettingsView } from './components/SettingsView';
 import { CreatePlaylistModal } from './components/CreatePlaylistModal';
+import { AddToPlaylistModal } from './components/AddToPlaylistModal';
 import { AmbientMode } from './components/AmbientMode';
 import { LyricsDrawer } from './components/LyricsDrawer';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -84,6 +85,7 @@ const MainApp: React.FC = () => {
   const [isLyricsOpen, setIsLyricsOpen] = useState(false);
   const [isCreatePlaylistOpen, setIsCreatePlaylistOpen] = useState(false);
   const [isAmbientModeOpen, setIsAmbientModeOpen] = useState(false);
+  const [trackToAddToPlaylist, setTrackToAddToPlaylist] = useState<Track | null>(null);
 
   const { playTrack, favorites, history } = useAudio();
 
@@ -135,6 +137,57 @@ const MainApp: React.FC = () => {
   const handleSelectPlaylist = (pl: Playlist) => {
     setActivePlaylist(pl);
     setCurrentTab('playlists');
+  };
+
+  const handleToggleTrackInPlaylist = async (playlistId: string, targetTrack: Track): Promise<boolean> => {
+    const pl = playlists.find((p) => p.id === playlistId);
+    if (!pl) return false;
+
+    const exists = pl.tracks.some((t) => t.id === targetTrack.id);
+    let updatedTracks: Track[];
+
+    if (exists) {
+      updatedTracks = pl.tracks.filter((t) => t.id !== targetTrack.id);
+    } else {
+      updatedTracks = [...pl.tracks, targetTrack];
+    }
+
+    const updatedPl: Playlist = {
+      ...pl,
+      tracks: updatedTracks,
+      trackCount: updatedTracks.length,
+      coverArt: pl.coverArt || targetTrack.albumArt,
+    };
+
+    await storageService.savePlaylist(updatedPl);
+    const updatedList = playlists.map((p) => (p.id === playlistId ? updatedPl : p));
+    setPlaylists(updatedList);
+    if (activePlaylist?.id === playlistId) {
+      setActivePlaylist(updatedPl);
+    }
+
+    return !exists;
+  };
+
+  const handleCreatePlaylistWithTrack = async (
+    name: string,
+    isPrivate: boolean,
+    targetTrack: Track
+  ): Promise<Playlist> => {
+    const newPlaylist: Playlist = {
+      id: `pl-${Date.now()}`,
+      name,
+      description: isPrivate ? 'Private collection' : 'Public playlist',
+      type: 'custom',
+      trackCount: 1,
+      tracks: [targetTrack],
+      createdAt: Date.now(),
+      coverArt: targetTrack.albumArt || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80',
+    };
+
+    await storageService.savePlaylist(newPlaylist);
+    setPlaylists((prev) => [newPlaylist, ...prev]);
+    return newPlaylist;
   };
 
   // Filter tracks based on current Tab & Search
@@ -235,9 +288,9 @@ const MainApp: React.FC = () => {
         {/* Dynamic Center Stage */}
         <main className="flex-1 overflow-y-auto px-8 py-6">
           {currentTab === 'discover' ? (
-            <DiscoverView />
+            <DiscoverView onOpenAddToPlaylist={(track) => setTrackToAddToPlaylist(track)} />
           ) : currentTab === 'feed' ? (
-            <RecommendationsDashboard />
+            <RecommendationsDashboard onOpenAddToPlaylist={(track) => setTrackToAddToPlaylist(track)} />
           ) : currentTab === 'settings' ? (
             <SettingsView />
           ) : (
@@ -310,6 +363,7 @@ const MainApp: React.FC = () => {
               <TrackList
                 tracks={visibleTracks}
                 onTrackSelect={(track) => playTrack(track, visibleTracks)}
+                onOpenAddToPlaylist={(track) => setTrackToAddToPlaylist(track)}
               />
             </div>
           )}
@@ -321,6 +375,7 @@ const MainApp: React.FC = () => {
           onToggleEqualizer={() => setIsEqOpen(!isEqOpen)}
           onToggleLyrics={() => setIsLyricsOpen(!isLyricsOpen)}
           isLyricsOpen={isLyricsOpen}
+          onOpenAddToPlaylist={(track) => setTrackToAddToPlaylist(track)}
         />
       </div>
 
@@ -329,6 +384,15 @@ const MainApp: React.FC = () => {
         isOpen={isCreatePlaylistOpen}
         onClose={() => setIsCreatePlaylistOpen(false)}
         onCreate={handleCreatePlaylist}
+      />
+
+      <AddToPlaylistModal
+        isOpen={trackToAddToPlaylist !== null}
+        onClose={() => setTrackToAddToPlaylist(null)}
+        track={trackToAddToPlaylist}
+        playlists={playlists}
+        onToggleTrackInPlaylist={handleToggleTrackInPlaylist}
+        onCreatePlaylistWithTrack={handleCreatePlaylistWithTrack}
       />
 
       <ImportModal
@@ -357,6 +421,7 @@ const MainApp: React.FC = () => {
         <AmbientMode
           isOpen={isAmbientModeOpen}
           onClose={() => setIsAmbientModeOpen(false)}
+          onOpenAddToPlaylist={(track) => setTrackToAddToPlaylist(track)}
         />
       </ErrorBoundary>
 

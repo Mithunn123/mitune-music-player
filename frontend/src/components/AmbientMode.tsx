@@ -11,13 +11,16 @@ import {
   Repeat, 
   Shuffle, 
   Disc, 
-  Image as ImageIcon 
+  Image as ImageIcon,
+  BookmarkPlus
 } from 'lucide-react';
 import { useAudio } from '../context/AudioContext';
+import { Track } from '../types/music';
 
 interface AmbientModeProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenAddToPlaylist?: (track: Track) => void;
 }
 
 const FALLBACK_ART =
@@ -25,7 +28,7 @@ const FALLBACK_ART =
 
 const BAR_COUNT = 48;
 
-export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose }) => {
+export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose, onOpenAddToPlaylist }) => {
   const {
     currentTrack,
     isPlaying,
@@ -238,13 +241,24 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose }) => 
                     {currentTrack?.artist || 'Ready to play'}
                   </p>
                 </div>
-                <button
-                  onClick={() => currentTrack && toggleFavorite(currentTrack.id)}
-                  className="p-2 text-neutral-400 hover:text-white hover:scale-105 active:scale-95 transition-all shrink-0"
-                  title="Favorite"
-                >
-                  <Heart className={`w-5 h-5 ${isFav ? 'fill-red-500 text-red-500' : ''}`} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => currentTrack && toggleFavorite(currentTrack.id)}
+                    className="p-2 text-neutral-400 hover:text-white hover:scale-105 active:scale-95 transition-all shrink-0"
+                    title="Favorite"
+                  >
+                    <Heart className={`w-5 h-5 ${isFav ? 'fill-red-500 text-red-500' : ''}`} />
+                  </button>
+                  {onOpenAddToPlaylist && (
+                    <button
+                      onClick={() => currentTrack && onOpenAddToPlaylist(currentTrack)}
+                      className="p-2 text-neutral-400 hover:text-white hover:scale-105 active:scale-95 transition-all shrink-0"
+                      title="Add to Playlist"
+                    >
+                      <BookmarkPlus className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               {currentTrack?.album && (
@@ -381,6 +395,15 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose }) => 
             >
               <Heart className={`w-4 h-4 ${isFav ? 'fill-red-500 text-red-500' : ''}`} />
             </button>
+            {onOpenAddToPlaylist && (
+              <button
+                onClick={() => currentTrack && onOpenAddToPlaylist(currentTrack)}
+                className="p-2.5 rounded-xl text-neutral-400 hover:text-white hover:scale-105 active:scale-95 transition-all"
+                title="Add to Playlist"
+              >
+                <BookmarkPlus className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-4">

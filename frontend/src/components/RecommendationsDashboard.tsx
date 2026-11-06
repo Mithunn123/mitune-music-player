@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Heart, RefreshCw } from 'lucide-react';
+import { Play, Heart, RefreshCw, BookmarkPlus } from 'lucide-react';
 import { recommendationEngine, TRENDING_SEEDS } from '../services/recommendationEngine';
 import { Track } from '../types/music';
 import { useAudio } from '../context/AudioContext';
 
-export const RecommendationsDashboard: React.FC = () => {
+interface RecommendationsDashboardProps {
+  onOpenAddToPlaylist?: (track: Track) => void;
+}
+
+export const RecommendationsDashboard: React.FC<RecommendationsDashboardProps> = ({ onOpenAddToPlaylist }) => {
   const [headline, setHeadline] = useState('Recommended Mix');
   const [forYouTracks, setForYouTracks] = useState<Track[]>([]);
   const [shelves, setShelves] = useState<{ title: string; tracks: Track[] }[]>([]);
@@ -129,17 +133,31 @@ export const RecommendationsDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleFavorite(track.id);
-                  }}
-                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:scale-105 active:scale-95"
-                  style={{ opacity: isFav ? 1 : undefined }}
-                  title="Favorite"
-                >
-                  <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-red-500 text-red-500' : ''}`} />
-                </button>
+                <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(track.id);
+                    }}
+                    className="p-1.5 rounded-full bg-black/60 text-white hover:scale-105 active:scale-95 transition-all"
+                    style={{ opacity: isFav ? 1 : undefined }}
+                    title="Favorite"
+                  >
+                    <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-red-500 text-red-500' : ''}`} />
+                  </button>
+                  {onOpenAddToPlaylist && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenAddToPlaylist(track);
+                      }}
+                      className="p-1.5 rounded-full bg-black/60 text-white hover:scale-105 active:scale-95 transition-all"
+                      title="Add to Playlist"
+                    >
+                      <BookmarkPlus className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Left-Aligned Metadata */}

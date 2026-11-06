@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search as SearchIcon, Loader2, Play } from 'lucide-react';
+import { Search as SearchIcon, Loader2, Play, BookmarkPlus } from 'lucide-react';
 import { resolverService } from '../services/resolverService';
 import { Track } from '../types/music';
 import { useAudio } from '../context/AudioContext';
@@ -19,7 +19,11 @@ const SPOTIFY_CATEGORIES = [
   { name: 'Acoustic', query: 'Acoustic chill songs official', tag: 'Relax' },
 ];
 
-export const DiscoverView: React.FC = () => {
+interface DiscoverViewProps {
+  onOpenAddToPlaylist?: (track: Track) => void;
+}
+
+export const DiscoverView: React.FC<DiscoverViewProps> = ({ onOpenAddToPlaylist }) => {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -109,6 +113,20 @@ export const DiscoverView: React.FC = () => {
                         <Play className="w-4 h-4 fill-black translate-x-0.5" />
                       </div>
                     </div>
+
+                    {/* Bookmark action on hover */}
+                    {onOpenAddToPlaylist && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenAddToPlaylist(track);
+                        }}
+                        className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:scale-105 active:scale-95"
+                        title="Add to Playlist"
+                      >
+                        <BookmarkPlus className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
 
                   <p className={`text-xs font-medium truncate ${isCurrent ? 'text-white font-semibold' : 'text-neutral-200'}`}>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Heart, Clock, MoreVertical, Music } from 'lucide-react';
+import { Play, Heart, Clock, MoreVertical, Music, BookmarkPlus } from 'lucide-react';
 import { Track } from '../types/music';
 import { useAudio } from '../context/AudioContext';
 
@@ -7,11 +7,13 @@ interface TrackListProps {
   tracks: Track[];
   onTrackSelect: (track: Track) => void;
   playlistContextTracks?: Track[];
+  onOpenAddToPlaylist?: (track: Track) => void;
 }
 
 export const TrackList: React.FC<TrackListProps> = ({
   tracks,
   onTrackSelect,
+  onOpenAddToPlaylist,
 }) => {
   const { currentTrack, isPlaying, favorites, toggleFavorite, addToQueue } = useAudio();
 
@@ -112,7 +114,22 @@ export const TrackList: React.FC<TrackListProps> = ({
               </div>
 
               {/* Duration & Actions */}
-              <div className="col-span-5 md:col-span-2 flex items-center justify-end gap-3 text-xs text-neutral-400">
+              <div className="col-span-5 md:col-span-2 flex items-center justify-end gap-2 text-xs text-neutral-400">
+                {/* Add to Playlist Action */}
+                {onOpenAddToPlaylist && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenAddToPlaylist(track);
+                    }}
+                    className="opacity-0 group-hover:opacity-100 p-1.5 hover:text-white hover:scale-105 active:scale-95 transition-all"
+                    title="Add to playlist"
+                  >
+                    <BookmarkPlus className="w-4 h-4 text-neutral-400 hover:text-white" />
+                  </button>
+                )}
+
+                {/* Favorite Action */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -129,8 +146,9 @@ export const TrackList: React.FC<TrackListProps> = ({
                   />
                 </button>
 
-                <span className="font-mono tabular-nums text-neutral-400">{formatDuration(track.duration)}</span>
+                <span className="font-mono tabular-nums text-neutral-400 ml-1">{formatDuration(track.duration)}</span>
 
+                {/* Add to queue action */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

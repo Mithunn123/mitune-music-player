@@ -13,15 +13,18 @@ import {
   Mic2, 
   Laptop, 
   SlidersHorizontal,
-  Check
+  Check,
+  BookmarkPlus
 } from 'lucide-react';
 import { useAudio } from '../context/AudioContext';
+import { Track } from '../types/music';
 
 interface AudioTimelineProps {
   onToggleQueue?: () => void;
   onToggleEqualizer?: () => void;
   onToggleLyrics?: () => void;
   isLyricsOpen?: boolean;
+  onOpenAddToPlaylist?: (track: Track) => void;
 }
 
 const OUTPUT_DEVICES = [
@@ -35,6 +38,7 @@ export const AudioTimeline: React.FC<AudioTimelineProps> = ({
   onToggleEqualizer,
   onToggleLyrics,
   isLyricsOpen,
+  onOpenAddToPlaylist,
 }) => {
   const {
     currentTrack,
@@ -138,11 +142,22 @@ export const AudioTimeline: React.FC<AudioTimelineProps> = ({
               {/* Favorite Action with micro-interaction */}
               <button
                 onClick={() => currentTrack && toggleFavorite(currentTrack.id)}
-                className="p-2 text-neutral-400 hover:text-white hover:scale-105 active:scale-95 transition-all shrink-0"
+                className="p-1.5 text-neutral-400 hover:text-white hover:scale-105 active:scale-95 transition-all shrink-0"
                 title={isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
               >
                 <Heart className={`w-4 h-4 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
               </button>
+
+              {/* Add to Playlist Action */}
+              {onOpenAddToPlaylist && (
+                <button
+                  onClick={() => currentTrack && onOpenAddToPlaylist(currentTrack)}
+                  className="p-1.5 text-neutral-400 hover:text-white hover:scale-105 active:scale-95 transition-all shrink-0"
+                  title="Add to Playlist"
+                >
+                  <BookmarkPlus className="w-4 h-4" />
+                </button>
+              )}
             </>
           ) : (
             <div className="flex items-center gap-3">
