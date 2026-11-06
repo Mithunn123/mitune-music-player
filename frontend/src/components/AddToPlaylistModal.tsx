@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   Search, 
@@ -102,8 +103,8 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
     pl.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
   );
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
+  const modalContent = (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
       <div 
         className="w-full max-w-md bg-[#121318] border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150 relative"
         onClick={(e) => e.stopPropagation()}
@@ -273,4 +274,7 @@ export const AddToPlaylistModal: React.FC<AddToPlaylistModalProps> = ({
       </div>
     </div>
   );
+
+  const modalRoot = document.getElementById('modal-root') || document.body;
+  return createPortal(modalContent, modalRoot);
 };

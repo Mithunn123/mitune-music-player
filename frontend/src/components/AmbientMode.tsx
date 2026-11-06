@@ -142,7 +142,7 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose, onOpe
 
   return (
     <div 
-      className={`fixed inset-0 z-50 bg-[#0d0e12] flex flex-col justify-between overflow-hidden select-none transition-opacity duration-300 ${
+      className={`fixed inset-0 z-40 bg-[#0d0e12] flex flex-col justify-between overflow-hidden select-none transition-opacity duration-300 ${
         isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
       }`}
       aria-hidden={!isOpen}
@@ -158,18 +158,13 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose, onOpe
 
       {/* Top Header Bar */}
       <div className="relative z-10 px-6 sm:px-8 py-5 flex items-center justify-between border-b border-white/5">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-white text-black flex items-center justify-center font-bold text-xs tracking-wider shadow-sm">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-white text-black flex items-center justify-center font-bold text-xs tracking-wider shadow-sm">
             M
           </div>
-          <div>
-            <span className="text-xs font-semibold tracking-wider text-white uppercase">
-              Full-Screen Player
-            </span>
-            <span className="text-[10px] text-neutral-400 block font-mono">
-              Hi-Fi Studio Engine
-            </span>
-          </div>
+          <span className="text-xs font-medium tracking-wide text-neutral-400">
+            mitune
+          </span>
         </div>
 
         {/* View Toggle (1:1 Artwork vs Vinyl CD) and Close Button */}
@@ -177,24 +172,24 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose, onOpe
           <div className="flex items-center bg-[#181920] border border-white/10 rounded-xl p-1">
             <button
               onClick={() => setDisplayMode('artwork')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
+              className={`p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
                 displayMode === 'artwork'
                   ? 'bg-white text-black'
                   : 'text-neutral-400 hover:text-white'
               }`}
-              title="1:1 Artwork Mode"
+              title="Artwork View"
             >
               <ImageIcon className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Cover</span>
             </button>
             <button
               onClick={() => setDisplayMode('cd')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
+              className={`p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
                 displayMode === 'cd'
                   ? 'bg-white text-black'
                   : 'text-neutral-400 hover:text-white'
               }`}
-              title="Vinyl CD Mode"
+              title="Vinyl View"
             >
               <Disc className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Vinyl</span>
@@ -204,7 +199,7 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose, onOpe
           <button
             onClick={onClose}
             className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all hover:scale-105 active:scale-95"
-            title="Exit Full-Screen (ESC)"
+            title="Close"
           >
             <X className="w-4 h-4" />
           </button>
@@ -234,11 +229,17 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose, onOpe
             <div className="w-full text-center sm:text-left">
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight truncate">
-                    {currentTrack?.title || 'No Track Selected'}
+                  <h2 
+                    className="text-xl sm:text-2xl font-bold text-white tracking-tight truncate cursor-default"
+                    title={currentTrack?.title}
+                  >
+                    {currentTrack?.title || 'No Track Playing'}
                   </h2>
-                  <p className="text-sm sm:text-base text-neutral-400 mt-1 truncate">
-                    {currentTrack?.artist || 'Ready to play'}
+                  <p 
+                    className="text-xs text-neutral-400 mt-1 truncate"
+                    title={currentTrack?.artist}
+                  >
+                    {currentTrack?.artist || 'Select a track to start playback'}
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
@@ -263,7 +264,7 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose, onOpe
 
               {currentTrack?.album && (
                 <div className="mt-3">
-                  <span className="inline-block px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-xs font-mono text-neutral-400">
+                  <span className="inline-block px-2.5 py-0.5 rounded-md bg-white/5 border border-white/10 text-[11px] font-mono text-neutral-400 truncate max-w-full">
                     {currentTrack.album}
                   </span>
                 </div>
@@ -335,11 +336,17 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose, onOpe
 
             {/* Track Info */}
             <div className="text-center max-w-lg px-4">
-              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight truncate">
-                {currentTrack?.title || 'No Track Selected'}
+              <h2 
+                className="text-xl sm:text-2xl font-bold text-white tracking-tight truncate cursor-default"
+                title={currentTrack?.title}
+              >
+                {currentTrack?.title || 'No Track Playing'}
               </h2>
-              <p className="text-sm text-neutral-400 mt-1 truncate">
-                {currentTrack?.artist || 'Ready to play'}
+              <p 
+                className="text-xs text-neutral-400 mt-1 truncate"
+                title={currentTrack?.artist}
+              >
+                {currentTrack?.artist || 'Select a track to start playback'}
               </p>
             </div>
           </div>

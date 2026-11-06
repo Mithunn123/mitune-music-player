@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, FolderPlus, Music } from 'lucide-react';
 
 interface CreatePlaylistModalProps {
@@ -26,8 +27,8 @@ export const CreatePlaylistModal: React.FC<CreatePlaylistModalProps> = ({
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
+  const modalContent = (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
       <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
         <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -91,4 +92,7 @@ export const CreatePlaylistModal: React.FC<CreatePlaylistModalProps> = ({
       </div>
     </div>
   );
+
+  const modalRoot = document.getElementById('modal-root') || document.body;
+  return createPortal(modalContent, modalRoot);
 };
