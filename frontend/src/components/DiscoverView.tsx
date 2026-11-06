@@ -30,7 +30,7 @@ export const DiscoverView: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const items = await resolverService.searchMusic(searchTerm, 30);
+      const items = await resolverService.searchFullSongs(searchTerm, 30);
       setResults(items);
     } catch (err) {
       console.error('Search error', err);
@@ -177,8 +177,8 @@ export const DiscoverView: React.FC = () => {
                   </div>
 
                   <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-zinc-500">
-                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
-                      ⚡ Instant
+                    <span className="px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono font-medium">
+                      Full Track · {formatDuration(track.duration)}
                     </span>
                     <button
                       onClick={(e) => {

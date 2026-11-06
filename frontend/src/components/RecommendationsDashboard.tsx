@@ -50,7 +50,7 @@ export const RecommendationsDashboard: React.FC = () => {
     setActiveMood(seed.tag);
     setIsRefreshing(true);
     try {
-      const tracks = await recommendationEngine.fetchInstantSongs(seed.query, 14);
+      const tracks = await recommendationEngine.fetchFullSongs(seed.query, 14);
       setHeadline(`Vibe Radio: ${seed.tag}`);
       setDescription(`Instant real-time stream queue generated from ${seed.tag}`);
       setForYouTracks(tracks);
@@ -221,7 +221,9 @@ export const RecommendationsDashboard: React.FC = () => {
                   </div>
 
                   <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-zinc-500">
-                    <span className="font-mono">{formatDuration(track.duration)}</span>
+                    <span className="px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono font-medium">
+                      Full Track · {formatDuration(track.duration)}
+                    </span>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

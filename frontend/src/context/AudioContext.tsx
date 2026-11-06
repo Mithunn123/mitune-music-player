@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { Track, Playlist } from '../types/music';
 import { audioService } from '../services/audioService';
+import { youtubePlayerService } from '../services/youtubePlayerService';
 import { resolverService } from '../services/resolverService';
 import { storageService } from '../services/storageService';
 
@@ -18,6 +19,7 @@ interface AudioContextType {
   history: any[];
   favorites: string[];
   visualizerData: Uint8Array | null;
+  activeEngine: 'youtube' | 'webaudio';
 
   // Actions
   playTrack: (track: Track, newQueue?: Track[]) => Promise<void>;
@@ -45,6 +47,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [volume, setVolumeState] = useState(0.8);
   const [isShuffle, setIsShuffle] = useState(false);
   const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('off');
+  const [activeEngine, setActiveEngine] = useState<'youtube' | 'webaudio'>('youtube');
 
   const [queue, setQueue] = useState<Track[]>([]);
   const [queueIndex, setQueueIndex] = useState<number>(-1);
@@ -61,21 +64,45 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   repeatModeRef.current = repeatMode;
   const isShuffleRef = useRef<boolean>(false);
   isShuffleRef.current = isShuffle;
+  const activeEngineRef = useRef<'youtube' | 'webaudio'>('youtube');
+  activeEngineRef.current = activeEngine;
 
-  // Sync state from AudioService
+  // Sync state from both AudioService and YouTubePlayerService
   useEffect(() => {
-    const unsubscribe = audioService.subscribe((state) => {
-      setIsPlaying(state.isPlaying);
-      setIsBuffering(state.isBuffering);
-      setCurrentTime(state.currentTime);
-      if (state.duration && isFinite(state.duration) && state.duration > 0) {
-        setDuration(state.duration);
+    // 1. WebAudio listener
+    const unsubscribeAudio = audioService.subscribe((state) => {
+      if (activeEngineRef.current === 'webaudio') {
+        setIsPlaying(state.isPlaying);
+        setIsBuffering(state.isBuffering);
+        setCurrentTime(state.currentTime);
+        if (state.duration && isFinite(state.duration) && state.duration > 0) {
+          setDuration(state.duration);
+        }
       }
     });
 
-    // Auto next track when current ends
+    // 2. YouTube listener
+    const unsubscribeYT = youtubePlayerService.subscribe((state) => {
+      if (activeEngineRef.current === 'youtube') {
+        setIsPlaying(state.isPlaying);
+        setIsBuffering(state.isBuffering);
+        setCurrentTime(state.currentTime);
+        if (state.duration && isFinite(state.duration) && state.duration > 0) {
+          setDuration(state.duration);
+        }
+      }
+    });
+
     audioService.onEnded(() => {
-      handleTrackEnd();
+      if (activeEngineRef.current === 'webaudio') {
+        handleTrackEnd();
+      }
+    });
+
+    youtubePlayerService.onEnded(() => {
+      if (activeEngineRef.current === 'youtube') {
+        handleTrackEnd();
+      }
     });
 
     // Load initial favorites & history
@@ -84,23 +111,38 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Audio Visualizer loop
     const animId = requestAnimationFrame(function updateVis() {
-      if (audioService) {
+      if (activeEngineRef.current === 'webaudio') {
         const data = audioService.getVisualizerData();
         if (data) setVisualizerData(new Uint8Array(data));
+      } else {
+        // Simulated dynamic equalizer bars for full YouTube tracks
+        if (isPlaying) {
+          const fakeData = new Uint8Array(32);
+          for (let i = 0; i < 32; i++) {
+            fakeData[i] = Math.floor(Math.sin(Date.now() / 150 + i) * 60 + 130 + Math.random() * 50);
+          }
+          setVisualizerData(fakeData);
+        }
       }
       requestAnimationFrame(updateVis);
     });
 
     return () => {
-      unsubscribe();
+      unsubscribeAudio();
+      unsubscribeYT();
       cancelAnimationFrame(animId);
     };
-  }, []);
+  }, [isPlaying]);
 
   const handleTrackEnd = () => {
     if (repeatModeRef.current === 'one') {
-      audioService.seek(0);
-      audioService.play();
+      if (activeEngineRef.current === 'youtube') {
+        youtubePlayerService.seek(0);
+        youtubePlayerService.play();
+      } else {
+        audioService.seek(0);
+        audioService.play();
+      }
       return;
     }
 
@@ -133,32 +175,38 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     storageService.addHistory(track.id, track.title, track.artist);
     storageService.getRecentHistory().then(setHistory);
 
+    await executePlayback(track);
+  };
+
+  const executePlayback = async (track: Track) => {
     try {
       if (track.audioBlobUrl) {
-        // Direct local file blob
+        // Local file -> HTML5 WebAudio
+        setActiveEngine('webaudio');
+        youtubePlayerService.stop();
         await audioService.setSource(track.audioBlobUrl, true);
-      } else if (track.streamUrl) {
-        // Already has direct stream - INSTANT PLAYBACK
-        await audioService.setSource(track.streamUrl, true);
-      } else {
-        setIsBuffering(true);
-        const resolvedUrl = await resolverService.resolveAudioStream(
-          track.id,
-          `${track.title} ${track.artist}`
-        );
-        if (resolvedUrl) {
-          track.streamUrl = resolvedUrl;
-          await audioService.setSource(resolvedUrl, true);
-        } else {
-          console.error('Failed to resolve stream for track', track.title);
-          setIsBuffering(false);
-        }
+        return;
       }
 
-      // Preload next track in queue for 0ms transition
-      const nextIdx = index + 1;
-      if (nextIdx < queueRef.current.length) {
-        resolverService.preloadTrack(queueRef.current[nextIdx]);
+      // Online track -> Play entire song via YouTube Player
+      setActiveEngine('youtube');
+      audioService.pause();
+
+      if (track.youtubeId) {
+        youtubePlayerService.loadTrack(track.youtubeId);
+      } else {
+        setIsBuffering(true);
+        const videoId = await resolverService.resolveYouTubeVideoId(track.title, track.artist);
+        if (videoId) {
+          track.youtubeId = videoId;
+          youtubePlayerService.loadTrack(videoId);
+        } else if (track.streamUrl) {
+          // Fallback to direct stream
+          setActiveEngine('webaudio');
+          await audioService.setSource(track.streamUrl, true);
+        } else {
+          setIsBuffering(false);
+        }
       }
     } catch (err) {
       console.error('Error during track play:', err);
@@ -176,7 +224,6 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       idx = newQueue.findIndex((t) => t.id === track.id);
       if (idx === -1) idx = 0;
     } else {
-      // Check if already in queue
       idx = queue.findIndex((t) => t.id === track.id);
       if (idx === -1) {
         q = [track, ...queue];
@@ -193,36 +240,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     storageService.addHistory(track.id, track.title, track.artist);
     storageService.getRecentHistory().then(setHistory);
 
-    try {
-      if (track.audioBlobUrl) {
-        await audioService.setSource(track.audioBlobUrl, true);
-      } else if (track.streamUrl) {
-        // INSTANT ZERO-LATENCY PLAYBACK
-        await audioService.setSource(track.streamUrl, true);
-      } else {
-        setIsBuffering(true);
-        const resolvedUrl = await resolverService.resolveAudioStream(
-          track.id,
-          `${track.title} ${track.artist}`
-        );
-        if (resolvedUrl) {
-          track.streamUrl = resolvedUrl;
-          await audioService.setSource(resolvedUrl, true);
-        } else {
-          console.error('Failed to resolve track stream URL');
-          setIsBuffering(false);
-        }
-      }
-
-      // Preload next track in queue
-      const nextIdx = idx + 1;
-      if (nextIdx < q.length) {
-        resolverService.preloadTrack(q[nextIdx]);
-      }
-    } catch (err) {
-      console.error('Playback trigger error', err);
-      setIsBuffering(false);
-    }
+    await executePlayback(track);
   };
 
   const togglePlay = () => {
@@ -233,20 +251,33 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return;
     }
 
-    if (isPlaying) {
-      audioService.pause();
+    if (activeEngine === 'youtube') {
+      if (isPlaying) {
+        youtubePlayerService.pause();
+      } else {
+        youtubePlayerService.play();
+      }
     } else {
-      audioService.play();
+      if (isPlaying) {
+        audioService.pause();
+      } else {
+        audioService.play();
+      }
     }
   };
 
   const seek = (seconds: number) => {
-    audioService.seek(seconds);
+    if (activeEngine === 'youtube') {
+      youtubePlayerService.seek(seconds);
+    } else {
+      audioService.seek(seconds);
+    }
     setCurrentTime(seconds);
   };
 
   const setVolume = (val: number) => {
     setVolumeState(val);
+    youtubePlayerService.setVolume(val);
     audioService.setVolume(val);
   };
 
@@ -319,6 +350,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         history,
         favorites,
         visualizerData,
+        activeEngine,
         playTrack,
         togglePlay,
         seek,

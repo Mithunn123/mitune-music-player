@@ -286,6 +286,21 @@ const MainApp: React.FC = () => {
         isOpen={isQueueOpen}
         onClose={() => setIsQueueOpen(false)}
       />
+
+      {/* Headless Global Full-Track YouTube Streaming Mount */}
+      <div
+        id="youtube-player-element"
+        style={{
+          position: 'fixed',
+          bottom: -9999,
+          left: -9999,
+          width: 240,
+          height: 240,
+          opacity: 0.01,
+          pointerEvents: 'none',
+          zIndex: -1,
+        }}
+      />
     </div>
   );
 };

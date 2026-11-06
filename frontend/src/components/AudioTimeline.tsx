@@ -118,9 +118,14 @@ export const AudioTimeline: React.FC<AudioTimelineProps> = ({
                 <p className="text-zinc-100 font-medium text-sm truncate">
                   {currentTrack.title}
                 </p>
-                <p className="text-zinc-400 text-xs truncate">
-                  {currentTrack.artist}
-                </p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <p className="text-zinc-400 text-xs truncate max-w-[140px]">
+                    {currentTrack.artist}
+                  </p>
+                  <span className="text-[9px] px-1 py-0.2 rounded bg-indigo-500/15 text-indigo-300 font-semibold border border-indigo-500/30">
+                    FULL SONG
+                  </span>
+                </div>
               </div>
               <button
                 onClick={() => currentTrack && toggleFavorite(currentTrack.id)}

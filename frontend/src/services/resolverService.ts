@@ -1,22 +1,12 @@
 import { storageService } from './storageService';
 import { Track } from '../types/music';
 
-export interface SearchResultItem {
-  id: string;
-  title: string;
-  artist: string;
-  album: string;
-  thumbnail: string;
-  duration: number;
-  streamUrl: string;
-}
-
 class ResolverService {
   private queryCache: Map<string, Track[]> = new Map();
-  private preloadElements: Map<string, HTMLAudioElement> = new Map();
+  private videoIdCache: Map<string, string> = new Map();
 
-  // Search the global music catalog with sub-200ms latency and pre-resolved stream URLs
-  async searchMusic(query: string, limit = 25): Promise<Track[]> {
+  // Search full-length songs using Innertube with zero CORS issues via local proxy
+  async searchFullSongs(query: string, limit = 20): Promise<Track[]> {
     const cleanQuery = query.trim();
     if (!cleanQuery) return [];
 
@@ -25,91 +15,135 @@ class ResolverService {
     }
 
     try {
+      const res = await fetch('/api/youtube/youtubei/v1/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          context: {
+            client: {
+              clientName: 'WEB',
+              clientVersion: '2.20240101.00.00',
+            },
+          },
+          query: cleanQuery,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const contents =
+          data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents?.[0]
+            ?.itemSectionRenderer?.contents || [];
+
+        const tracks: Track[] = contents
+          .filter((c: any) => c.videoRenderer && c.videoRenderer.videoId)
+          .slice(0, limit)
+          .map((c: any) => {
+            const v = c.videoRenderer;
+            const durText = v.lengthText?.simpleText || '3:30';
+            const parts = durText.split(':').map(Number);
+            let duration = 210;
+            if (parts.length === 2) {
+              duration = parts[0] * 60 + parts[1];
+            } else if (parts.length === 3) {
+              duration = parts[0] * 3600 + parts[1] * 60 + parts[2];
+            }
+
+            const title = v.title?.runs?.[0]?.text || 'Unknown Title';
+            const artist = v.ownerText?.runs?.[0]?.text || 'Featured Artist';
+            const thumbnail =
+              v.thumbnail?.thumbnails?.slice(-1)[0]?.url ||
+              `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`;
+
+            return {
+              id: `yt-${v.videoId}`,
+              youtubeId: v.videoId,
+              title,
+              artist,
+              album: 'Official Full Track',
+              duration,
+              albumArt: thumbnail,
+              source: 'youtube',
+              addedAt: Date.now(),
+            };
+          });
+
+        if (tracks.length > 0) {
+          this.queryCache.set(cleanQuery, tracks);
+          return tracks;
+        }
+      }
+    } catch (err) {
+      console.warn('Innertube search proxy fallback to Apple Catalog:', err);
+    }
+
+    // Fallback: iTunes search
+    return this.searchAppleFallback(cleanQuery, limit);
+  }
+
+  // Fallback search
+  private async searchAppleFallback(cleanQuery: string, limit: number): Promise<Track[]> {
+    try {
       const url = `https://itunes.apple.com/search?term=${encodeURIComponent(
         cleanQuery
       )}&media=music&entity=song&limit=${limit}`;
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
-
-      const res = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeoutId);
-
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        const results = (data.results || []).filter((item: any) => item.previewUrl);
-
-        const tracks: Track[] = results.map((item: any) => {
-          // Upgrade artwork to 600x600 HD
-          const rawArt = item.artworkUrl100 || '';
-          const hdArt = rawArt.replace('100x100bb', '600x600bb');
-
-          return {
-            id: `apple-${item.trackId}`,
-            title: item.trackName,
-            artist: item.artistName,
-            album: item.collectionName || 'Single',
-            duration: Math.round((item.trackTimeMillis || 180000) / 1000),
-            albumArt: hdArt || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80',
-            source: 'instant',
-            streamUrl: item.previewUrl,
-            genre: item.primaryGenreName,
-            addedAt: Date.now(),
-          };
-        });
-
-        this.queryCache.set(cleanQuery, tracks);
-
-        // Preload first 2 tracks in memory so they start in 0ms if clicked
-        if (tracks.length > 0) {
-          this.preloadTrack(tracks[0]);
-          if (tracks[1]) this.preloadTrack(tracks[1]);
-        }
-
-        return tracks;
+        const results = data.results || [];
+        return results.map((item: any) => ({
+          id: `apple-${item.trackId}`,
+          title: item.trackName,
+          artist: item.artistName,
+          album: item.collectionName || 'Single',
+          duration: Math.round((item.trackTimeMillis || 180000) / 1000),
+          albumArt: (item.artworkUrl100 || '').replace('100x100bb', '600x600bb'),
+          source: 'instant',
+          streamUrl: item.previewUrl,
+          addedAt: Date.now(),
+        }));
       }
-    } catch (err) {
-      console.warn('Instant global search fallback', err);
-    }
-
+    } catch {}
     return [];
   }
 
-  // Pre-buffers audio chunk in background
-  preloadTrack(track: Track) {
-    if (!track.streamUrl || this.preloadElements.has(track.id)) return;
-    try {
-      const audio = new Audio();
-      audio.preload = 'auto';
-      audio.src = track.streamUrl;
-      this.preloadElements.set(track.id, audio);
+  // Find exact YouTube Video ID for any track so it plays the full song
+  async resolveYouTubeVideoId(title: string, artist: string): Promise<string | null> {
+    const key = `${title} - ${artist}`.toLowerCase().trim();
+    if (this.videoIdCache.has(key)) {
+      return this.videoIdCache.get(key)!;
+    }
 
-      // Keep preload pool small (max 6 items)
-      if (this.preloadElements.size > 6) {
-        const firstKey = this.preloadElements.keys().next().value;
-        if (firstKey) {
-          const el = this.preloadElements.get(firstKey);
-          if (el) el.src = '';
-          this.preloadElements.delete(firstKey);
+    try {
+      const res = await fetch('/api/youtube/youtubei/v1/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          context: {
+            client: {
+              clientName: 'WEB',
+              clientVersion: '2.20240101.00.00',
+            },
+          },
+          query: `${title} ${artist} official audio`,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const contents =
+          data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents?.[0]
+            ?.itemSectionRenderer?.contents || [];
+
+        const video = contents.find((c: any) => c.videoRenderer)?.videoRenderer;
+        if (video && video.videoId) {
+          this.videoIdCache.set(key, video.videoId);
+          return video.videoId;
         }
       }
-    } catch {
-      // Ignore background preload errors
-    }
-  }
-
-  // Instant Stream Resolver
-  async resolveAudioStream(trackId: string, searchFallback?: string): Promise<string | null> {
-    const cacheKey = `stream:${trackId}`;
-    const cached = await storageService.getCachedStream(cacheKey);
-    if (cached) return cached;
-
-    if (searchFallback) {
-      const items = await this.searchMusic(searchFallback, 3);
-      if (items.length > 0 && items[0].streamUrl) {
-        await storageService.setCachedStream(cacheKey, items[0].streamUrl, items[0].title);
-        return items[0].streamUrl;
-      }
+    } catch (e) {
+      console.warn('Could not resolve video ID for full playback:', e);
     }
 
     return null;

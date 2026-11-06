@@ -5,9 +5,10 @@ export interface Track {
   album?: string;
   duration: number; // in seconds
   albumArt: string;
-  source: 'local' | 'piped' | 'spotify' | 'ytmusic' | 'demo' | 'instant';
+  source: 'local' | 'piped' | 'spotify' | 'ytmusic' | 'demo' | 'instant' | 'youtube';
   uri?: string;
   streamUrl?: string;
+  youtubeId?: string;
   file?: File;
   audioBlobUrl?: string;
   addedAt?: number;
