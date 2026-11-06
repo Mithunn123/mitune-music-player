@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sun, Moon, Music, Search, Library, Grid, Users, Settings, MoodChill, MoodEnergetic, MoodFocus, MoodNostalgic, MoodAtmospheric, MoodLateNight } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 interface NavLink {
   label: string;
