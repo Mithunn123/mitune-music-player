@@ -6,9 +6,6 @@ import {
   SkipForward, 
   Volume2, 
   VolumeX, 
-  Shuffle, 
-  Repeat, 
-  Repeat1, 
   Heart, 
   ListMusic, 
   SlidersHorizontal 
@@ -31,17 +28,12 @@ export const AudioTimeline: React.FC<AudioTimelineProps> = ({
     currentTime,
     duration,
     volume,
-    isShuffle,
-    repeatMode,
     favorites,
-    visualizerData,
     togglePlay,
     seek,
     setVolume,
     nextTrack,
     previousTrack,
-    toggleShuffle,
-    toggleRepeat,
     toggleFavorite,
   } = useAudio();
 
@@ -69,86 +61,47 @@ export const AudioTimeline: React.FC<AudioTimelineProps> = ({
   };
 
   return (
-    <div className="relative z-30 bg-zinc-950/80 backdrop-blur-2xl border-t border-white/10 px-4 py-3 select-none">
-      {/* Visualizer micro-bar on top border */}
-      {visualizerData && isPlaying && (
-        <div className="absolute -top-1 left-0 right-0 h-1 flex items-end justify-center gap-1 opacity-70 overflow-hidden pointer-events-none">
-          {Array.from(visualizerData.slice(0, 32)).map((val, idx) => (
-            <div
-              key={idx}
-              className="flex-1 bg-gradient-to-t from-indigo-500 to-purple-400 transition-all duration-75"
-              style={{ height: `${Math.max(15, (val / 255) * 100)}%` }}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Progress Bar */}
+    <div className="bg-zinc-950 border-t border-white/5 px-6 py-3 select-none shrink-0">
+      {/* Seekbar */}
       <div
         className="w-full h-2 mb-2 group cursor-pointer relative flex items-center"
         onClick={handleSeek}
       >
-        <div className="w-full h-1 group-hover:h-1.5 transition-all bg-zinc-800 rounded-full overflow-hidden relative">
+        <div className="w-full h-1 group-hover:h-1.5 transition-all bg-zinc-800 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full relative"
+            className="h-full bg-indigo-500 rounded-full"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
-        <div
-          className="absolute w-3 h-3 bg-white rounded-full shadow opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1/2 pointer-events-none"
-          style={{ left: `${progressPercent}%` }}
-        />
       </div>
 
       <div className="flex items-center justify-between gap-4">
-        {/* Track Metadata (Left) */}
-        <div className="flex items-center gap-3 w-1/4 min-w-[200px]">
+        {/* Track Info (Left) */}
+        <div className="flex items-center gap-3 w-1/4 min-w-[180px]">
           {currentTrack ? (
             <>
-              <div className="relative group">
-                <img
-                  src={currentTrack.albumArt || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'}
-                  alt={currentTrack.title}
-                  className={`w-12 h-12 rounded-xl object-cover border border-white/10 shadow-md ${
-                    isPlaying ? 'ring-2 ring-indigo-500/50 animate-pulse' : ''
-                  }`}
-                />
-              </div>
+              <img
+                src={currentTrack.albumArt || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&auto=format&fit=crop&q=80'}
+                alt={currentTrack.title}
+                className="w-10 h-10 rounded-lg object-cover bg-zinc-900 border border-white/5 shrink-0"
+              />
               <div className="overflow-hidden">
-                <p className="text-zinc-100 font-medium text-sm truncate">
+                <p className="text-zinc-100 font-medium text-xs truncate">
                   {currentTrack.title}
                 </p>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <p className="text-zinc-400 text-xs truncate max-w-[140px]">
-                    {currentTrack.artist}
-                  </p>
-                  <span className="text-[9px] px-1 py-0.2 rounded bg-indigo-500/15 text-indigo-300 font-semibold border border-indigo-500/30">
-                    FULL SONG
-                  </span>
-                </div>
+                <p className="text-zinc-500 text-[11px] truncate">
+                  {currentTrack.artist}
+                </p>
               </div>
               <button
                 onClick={() => currentTrack && toggleFavorite(currentTrack.id)}
-                className="p-1.5 rounded-lg hover:bg-white/5 transition-colors ml-1"
-                title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                className="p-1.5 text-zinc-500 hover:text-white transition-colors"
               >
-                <Heart
-                  className={`w-4 h-4 transition-colors ${
-                    isFavorite ? 'fill-red-500 text-red-500' : 'text-zinc-500 hover:text-white'
-                  }`}
-                />
+                <Heart className={`w-4 h-4 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
               </button>
             </>
           ) : (
-            <div className="text-zinc-500 text-xs flex items-center gap-2">
-              <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-white/5 flex items-center justify-center text-zinc-600">
-                ♫
-              </div>
-              <div>
-                <p className="text-zinc-400 font-medium">Ready to play</p>
-                <p className="text-zinc-600 text-[11px]">Select a song or import music</p>
-              </div>
-            </div>
+            <p className="text-zinc-600 text-xs">Ready to play</p>
           )}
         </div>
 
@@ -156,73 +109,45 @@ export const AudioTimeline: React.FC<AudioTimelineProps> = ({
         <div className="flex flex-col items-center gap-1">
           <div className="flex items-center gap-3">
             <button
-              onClick={toggleShuffle}
-              className={`p-2 rounded-lg transition-colors ${
-                isShuffle ? 'text-indigo-400 bg-indigo-500/10' : 'text-zinc-400 hover:text-white'
-              }`}
-              title="Shuffle"
-            >
-              <Shuffle className="w-4 h-4" />
-            </button>
-
-            <button
               onClick={previousTrack}
-              className="p-2 rounded-lg text-zinc-300 hover:text-white hover:bg-white/5 transition-colors"
-              title="Previous Track"
+              className="p-1.5 text-zinc-400 hover:text-white transition-colors"
             >
-              <SkipBack className="w-5 h-5" />
+              <SkipBack className="w-4 h-4" />
             </button>
 
             <button
               onClick={togglePlay}
-              className="p-3 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:scale-105 active:scale-95 shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center"
-              title={isPlaying ? 'Pause' : 'Play'}
+              className="p-2.5 rounded-full bg-white text-zinc-950 hover:scale-105 active:scale-95 transition-transform flex items-center justify-center shadow"
             >
               {isBuffering ? (
-                <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-zinc-950/20 border-t-zinc-950 rounded-full animate-spin" />
               ) : isPlaying ? (
-                <Pause className="w-5 h-5 fill-white" />
+                <Pause className="w-4 h-4 fill-zinc-950" />
               ) : (
-                <Play className="w-5 h-5 fill-white translate-x-0.5" />
+                <Play className="w-4 h-4 fill-zinc-950 translate-x-0.5" />
               )}
             </button>
 
             <button
               onClick={nextTrack}
-              className="p-2 rounded-lg text-zinc-300 hover:text-white hover:bg-white/5 transition-colors"
-              title="Next Track"
+              className="p-1.5 text-zinc-400 hover:text-white transition-colors"
             >
-              <SkipForward className="w-5 h-5" />
-            </button>
-
-            <button
-              onClick={toggleRepeat}
-              className={`p-2 rounded-lg transition-colors ${
-                repeatMode !== 'off' ? 'text-indigo-400 bg-indigo-500/10' : 'text-zinc-400 hover:text-white'
-              }`}
-              title={`Repeat: ${repeatMode}`}
-            >
-              {repeatMode === 'one' ? (
-                <Repeat1 className="w-4 h-4" />
-              ) : (
-                <Repeat className="w-4 h-4" />
-              )}
+              <SkipForward className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Time Display */}
-          <div className="text-[11px] text-zinc-500 font-mono tracking-wider">
+          <div className="text-[10px] text-zinc-500 font-mono">
             {formatTime(currentTime)} / {formatTime(duration)}
           </div>
         </div>
 
         {/* Right Tools (Volume, EQ, Queue) */}
-        <div className="flex items-center justify-end gap-3 w-1/4 min-w-[200px]">
+        <div className="flex items-center justify-end gap-3 w-1/4 min-w-[180px]">
           {onToggleEqualizer && (
             <button
               onClick={onToggleEqualizer}
-              className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
-              title="Equalizer"
+              className="p-1.5 text-zinc-400 hover:text-white transition-colors"
+              title="EQ"
             >
               <SlidersHorizontal className="w-4 h-4" />
             </button>
@@ -231,8 +156,8 @@ export const AudioTimeline: React.FC<AudioTimelineProps> = ({
           {onToggleQueue && (
             <button
               onClick={onToggleQueue}
-              className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
-              title="Current Queue"
+              className="p-1.5 text-zinc-400 hover:text-white transition-colors"
+              title="Queue"
             >
               <ListMusic className="w-4 h-4" />
             </button>
@@ -241,21 +166,16 @@ export const AudioTimeline: React.FC<AudioTimelineProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => setVolume(volume === 0 ? 0.8 : 0)}
-              className="p-1.5 text-zinc-400 hover:text-white transition-colors"
+              className="text-zinc-400 hover:text-white"
             >
-              {volume === 0 ? (
-                <VolumeX className="w-4 h-4 text-red-400" />
-              ) : (
-                <Volume2 className="w-4 h-4" />
-              )}
+              {volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
             </button>
-
             <div
-              className="w-20 h-1.5 bg-zinc-800 rounded-full cursor-pointer relative overflow-hidden group"
+              className="w-16 h-1 bg-zinc-800 rounded-full cursor-pointer relative"
               onClick={handleVolume}
             >
               <div
-                className="h-full bg-zinc-300 group-hover:bg-indigo-400 rounded-full transition-all"
+                className="h-full bg-zinc-300 rounded-full"
                 style={{ width: `${volume * 100}%` }}
               />
             </div>

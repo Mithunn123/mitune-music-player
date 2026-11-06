@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { Track, Playlist } from '../types/music';
+import { Track } from '../types/music';
 import { audioService } from '../services/audioService';
 import { youtubePlayerService } from '../services/youtubePlayerService';
 import { resolverService } from '../services/resolverService';
@@ -18,7 +18,6 @@ interface AudioContextType {
   queueIndex: number;
   history: any[];
   favorites: string[];
-  visualizerData: Uint8Array | null;
   activeEngine: 'youtube' | 'webaudio';
 
   // Actions
@@ -53,9 +52,8 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [queueIndex, setQueueIndex] = useState<number>(-1);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [history, setHistory] = useState<any[]>([]);
-  const [visualizerData, setVisualizerData] = useState<Uint8Array | null>(null);
 
-  // Keep refs for callbacks
+  // Refs for stable callbacks
   const queueRef = useRef<Track[]>([]);
   queueRef.current = queue;
   const queueIndexRef = useRef<number>(-1);
@@ -67,10 +65,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const activeEngineRef = useRef<'youtube' | 'webaudio'>('youtube');
   activeEngineRef.current = activeEngine;
 
-  // Sync state from both AudioService and YouTubePlayerService
+  // Single mount effect - zero high-frequency state churn
   useEffect(() => {
-    // 1. WebAudio listener
-    const unsubscribeAudio = audioService.subscribe((state) => {
+    const unsubAudio = audioService.subscribe((state) => {
       if (activeEngineRef.current === 'webaudio') {
         setIsPlaying(state.isPlaying);
         setIsBuffering(state.isBuffering);
@@ -81,8 +78,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     });
 
-    // 2. YouTube listener
-    const unsubscribeYT = youtubePlayerService.subscribe((state) => {
+    const unsubYT = youtubePlayerService.subscribe((state) => {
       if (activeEngineRef.current === 'youtube') {
         setIsPlaying(state.isPlaying);
         setIsBuffering(state.isBuffering);
@@ -94,45 +90,21 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
 
     audioService.onEnded(() => {
-      if (activeEngineRef.current === 'webaudio') {
-        handleTrackEnd();
-      }
+      if (activeEngineRef.current === 'webaudio') handleTrackEnd();
     });
 
     youtubePlayerService.onEnded(() => {
-      if (activeEngineRef.current === 'youtube') {
-        handleTrackEnd();
-      }
+      if (activeEngineRef.current === 'youtube') handleTrackEnd();
     });
 
-    // Load initial favorites & history
     storageService.getFavorites().then(setFavorites);
     storageService.getRecentHistory().then(setHistory);
 
-    // Audio Visualizer loop
-    const animId = requestAnimationFrame(function updateVis() {
-      if (activeEngineRef.current === 'webaudio') {
-        const data = audioService.getVisualizerData();
-        if (data) setVisualizerData(new Uint8Array(data));
-      } else {
-        // Simulated dynamic equalizer bars for full YouTube tracks
-        if (isPlaying) {
-          const fakeData = new Uint8Array(32);
-          for (let i = 0; i < 32; i++) {
-            fakeData[i] = Math.floor(Math.sin(Date.now() / 150 + i) * 60 + 130 + Math.random() * 50);
-          }
-          setVisualizerData(fakeData);
-        }
-      }
-      requestAnimationFrame(updateVis);
-    });
-
     return () => {
-      unsubscribeAudio();
-      unsubscribeYT();
-      cancelAnimationFrame(animId);
+      unsubAudio();
+      unsubYT();
     };
-  }, [isPlaying]);
+  }, []);
 
   const handleTrackEnd = () => {
     if (repeatModeRef.current === 'one') {
@@ -171,7 +143,6 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setCurrentTrack(track);
     setDuration(track.duration || 0);
 
-    // Record history
     storageService.addHistory(track.id, track.title, track.artist);
     storageService.getRecentHistory().then(setHistory);
 
@@ -181,14 +152,12 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const executePlayback = async (track: Track) => {
     try {
       if (track.audioBlobUrl) {
-        // Local file -> HTML5 WebAudio
         setActiveEngine('webaudio');
         youtubePlayerService.stop();
         await audioService.setSource(track.audioBlobUrl, true);
         return;
       }
 
-      // Online track -> Play entire song via YouTube Player
       setActiveEngine('youtube');
       audioService.pause();
 
@@ -201,7 +170,6 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           track.youtubeId = videoId;
           youtubePlayerService.loadTrack(videoId);
         } else if (track.streamUrl) {
-          // Fallback to direct stream
           setActiveEngine('webaudio');
           await audioService.setSource(track.streamUrl, true);
         } else {
@@ -209,7 +177,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
       }
     } catch (err) {
-      console.error('Error during track play:', err);
+      console.error('Error during playback:', err);
       setIsBuffering(false);
     }
   };
@@ -236,7 +204,6 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setCurrentTrack(track);
     setDuration(track.duration || 0);
 
-    // Save history
     storageService.addHistory(track.id, track.title, track.artist);
     storageService.getRecentHistory().then(setHistory);
 
@@ -245,9 +212,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const togglePlay = () => {
     if (!currentTrack) {
-      if (queue.length > 0) {
-        playAtIndex(0);
-      }
+      if (queue.length > 0) playAtIndex(0);
       return;
     }
 
@@ -304,13 +269,8 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const toggleShuffle = () => {
-    setIsShuffle(!isShuffle);
-  };
-
-  const toggleRepeat = () => {
-    setRepeatMode((prev) => (prev === 'off' ? 'all' : prev === 'all' ? 'one' : 'off'));
-  };
+  const toggleShuffle = () => setIsShuffle(!isShuffle);
+  const toggleRepeat = () => setRepeatMode((p) => (p === 'off' ? 'all' : p === 'all' ? 'one' : 'off'));
 
   const toggleFavorite = async (trackId: string) => {
     const isFav = await storageService.toggleFavorite(trackId);
@@ -321,10 +281,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const addToQueue = (track: Track) => {
-    setQueue((prev) => [...prev, track]);
-  };
-
+  const addToQueue = (track: Track) => setQueue((p) => [...p, track]);
   const clearQueue = () => {
     setQueue([]);
     setQueueIndex(-1);
@@ -349,7 +306,6 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         queueIndex,
         history,
         favorites,
-        visualizerData,
         activeEngine,
         playTrack,
         togglePlay,
