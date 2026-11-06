@@ -5,8 +5,8 @@ class ResolverService {
   private queryCache: Map<string, Track[]> = new Map();
   private videoIdCache: Map<string, string> = new Map();
 
-  // Search full-length songs using Innertube with zero CORS issues via local proxy
-  async searchFullSongs(query: string, limit = 20): Promise<Track[]> {
+  // Search full-length songs with direct pre-attached videoIds
+  async searchFullSongs(query: string, limit = 24): Promise<Track[]> {
     const cleanQuery = query.trim();
     if (!cleanQuery) return [];
 
@@ -55,12 +55,16 @@ class ResolverService {
               v.thumbnail?.thumbnails?.slice(-1)[0]?.url ||
               `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`;
 
+            // Cache the video ID directly
+            const key = `${title} - ${artist}`.toLowerCase().trim();
+            this.videoIdCache.set(key, v.videoId);
+
             return {
               id: `yt-${v.videoId}`,
               youtubeId: v.videoId,
               title,
               artist,
-              album: 'Official Full Track',
+              album: 'Full Track',
               duration,
               albumArt: thumbnail,
               source: 'youtube',
@@ -74,14 +78,13 @@ class ResolverService {
         }
       }
     } catch (err) {
-      console.warn('Innertube search proxy fallback to Apple Catalog:', err);
+      console.warn('Search fallback:', err);
     }
 
-    // Fallback: iTunes search
     return this.searchAppleFallback(cleanQuery, limit);
   }
 
-  // Fallback search
+  // Fast Apple fallback (already contains previewUrl)
   private async searchAppleFallback(cleanQuery: string, limit: number): Promise<Track[]> {
     try {
       const url = `https://itunes.apple.com/search?term=${encodeURIComponent(
@@ -108,7 +111,7 @@ class ResolverService {
     return [];
   }
 
-  // Find exact YouTube Video ID for any track so it plays the full song
+  // Rapid resolution with cache
   async resolveYouTubeVideoId(title: string, artist: string): Promise<string | null> {
     const key = `${title} - ${artist}`.toLowerCase().trim();
     if (this.videoIdCache.has(key)) {
@@ -126,7 +129,7 @@ class ResolverService {
               clientVersion: '2.20240101.00.00',
             },
           },
-          query: `${title} ${artist} official audio`,
+          query: `${title} ${artist} audio`,
         }),
       });
 
@@ -143,7 +146,7 @@ class ResolverService {
         }
       }
     } catch (e) {
-      console.warn('Could not resolve video ID for full playback:', e);
+      console.warn('Resolution error:', e);
     }
 
     return null;
