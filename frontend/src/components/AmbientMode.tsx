@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { 
   X, 
   Play, 
@@ -23,6 +23,8 @@ interface AmbientModeProps {
 const FALLBACK_ART =
   'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&auto=format&fit=crop&q=80';
 
+const BAR_COUNT = 48;
+
 export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose }) => {
   const {
     currentTrack,
@@ -44,20 +46,57 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose }) => 
   } = useAudio();
 
   const [displayMode, setDisplayMode] = useState<'cd' | 'artwork'>('artwork');
-  const [beatPhase, setBeatPhase] = useState(0);
   const [imgError, setImgError] = useState(false);
+
+  // Audio beat visualizer direct DOM ref container (avoids 60fps React state churn)
+  const visualizerContainerRef = useRef<HTMLDivElement>(null);
   const animFrameRef = useRef<number | null>(null);
 
-  // Audio beat visualizer pulse loop
+  // Pre-generate static angles for 48 bars
+  const barAngles = useMemo(() => {
+    return Array.from({ length: BAR_COUNT }, (_, i) => (i / BAR_COUNT) * 360);
+  }, []);
+
+  // Decoupled, non-blocking 60fps RAF loop operating directly on DOM nodes
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || displayMode !== 'cd') {
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
+      return;
+    }
+
+    const container = visualizerContainerRef.current;
+    if (!container) return;
+    const barElements = container.children;
 
     let startTime = performance.now();
+
     const animate = (time: number) => {
-      if (isPlaying) {
-        const elapsed = (time - startTime) / 1000;
-        setBeatPhase(elapsed * 2 * Math.PI * 2);
+      const elapsed = (time - startTime) / 1000;
+      const phase = elapsed * 2 * Math.PI * 2; // ~120 BPM cycle
+
+      for (let i = 0; i < barElements.length; i++) {
+        const el = barElements[i] as HTMLElement;
+        if (!el) continue;
+
+        if (isPlaying) {
+          const wave1 = Math.sin(phase + i * 0.4);
+          const wave2 = Math.cos(phase * 0.7 + i * 0.8);
+          const height = Math.max(6, Math.min(28, 12 + wave1 * 8 + wave2 * 6));
+          const opacity = 0.5 + (wave1 + 1) * 0.25;
+
+          el.style.height = `${height}px`;
+          el.style.opacity = `${opacity}`;
+          el.style.transform = `rotate(${barAngles[i]}deg) translateY(-${145 + height / 2}px)`;
+        } else {
+          el.style.height = '4px';
+          el.style.opacity = '0.2';
+          el.style.transform = `rotate(${barAngles[i]}deg) translateY(-147px)`;
+        }
       }
+
       animFrameRef.current = requestAnimationFrame(animate);
     };
 
@@ -66,9 +105,10 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose }) => 
     return () => {
       if (animFrameRef.current) {
         cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
       }
     };
-  }, [isOpen, isPlaying]);
+  }, [isOpen, isPlaying, displayMode, barAngles]);
 
   // Escape key closes modal
   useEffect(() => {
@@ -84,8 +124,6 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose }) => 
     setImgError(false);
   }, [currentTrack?.id]);
 
-  if (!isOpen) return null;
-
   const isFav = currentTrack ? (favorites || []).includes(currentTrack.id) : false;
   const safeDuration = duration > 0 ? duration : 1;
   const progressPercent = Math.max(0, Math.min(100, (currentTime / safeDuration) * 100));
@@ -99,20 +137,13 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose }) => 
 
   const albumArt = !imgError && currentTrack?.albumArt ? currentTrack.albumArt : FALLBACK_ART;
 
-  // Generate 48 circular audio visualizer bars around the CD
-  const BAR_COUNT = 48;
-  const visualizerBars = Array.from({ length: BAR_COUNT }, (_, i) => {
-    const angle = (i / BAR_COUNT) * 360;
-    const wave1 = Math.sin(beatPhase + i * 0.4);
-    const wave2 = Math.cos(beatPhase * 0.7 + i * 0.8);
-    const height = isPlaying ? Math.max(6, Math.min(28, 12 + wave1 * 8 + wave2 * 6)) : 4;
-    const opacity = isPlaying ? 0.6 + (wave1 + 1) * 0.2 : 0.25;
-
-    return { angle, height, opacity };
-  });
-
   return (
-    <div className="fixed inset-0 z-50 bg-[#0d0e12] flex flex-col justify-between overflow-hidden select-none">
+    <div 
+      className={`fixed inset-0 z-50 bg-[#0d0e12] flex flex-col justify-between overflow-hidden select-none transition-opacity duration-300 ${
+        isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+      }`}
+      aria-hidden={!isOpen}
+    >
       {/* Subtle Atmospheric Backdrop (Clean, 100% crash-free, zero neon gradients) */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div
@@ -231,16 +262,19 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose }) => 
              ======================================================== */
           <div className="flex flex-col items-center justify-center space-y-8 animate-in fade-in zoom-in-95 duration-200">
             <div className="relative flex items-center justify-center">
-              {/* Circular Audio Equalizer Beat Ring */}
-              <div className="absolute w-[320px] h-[320px] sm:w-[420px] sm:h-[420px] flex items-center justify-center pointer-events-none">
-                {visualizerBars.map((bar, idx) => (
+              {/* Circular Audio Equalizer Beat Ring (Direct DOM Mutation Container) */}
+              <div 
+                ref={visualizerContainerRef}
+                className="absolute w-[320px] h-[320px] sm:w-[420px] sm:h-[420px] flex items-center justify-center pointer-events-none"
+              >
+                {barAngles.map((angle, idx) => (
                   <div
                     key={idx}
-                    className="absolute w-1 rounded-full transition-all duration-75 bg-white"
+                    className="absolute w-1 rounded-full bg-white transition-opacity duration-75"
                     style={{
-                      height: `${bar.height}px`,
-                      opacity: bar.opacity,
-                      transform: `rotate(${bar.angle}deg) translateY(-${145 + (bar.height / 2)}px)`,
+                      height: '4px',
+                      opacity: 0.25,
+                      transform: `rotate(${angle}deg) translateY(-147px)`,
                     }}
                   />
                 ))}
@@ -248,7 +282,7 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose }) => 
 
               {/* Vinyl / CD Outer Disc Body */}
               <div
-                className={`w-64 h-64 sm:w-76 sm:h-76 rounded-full bg-[#121318] border-[3px] border-white/15 shadow-[0_0_50px_rgba(0,0,0,0.9)] flex items-center justify-center relative overflow-hidden transition-transform duration-700 ${
+                className={`w-64 h-64 sm:w-76 sm:h-76 rounded-full bg-[#121318] border-[3px] border-white/15 shadow-[0_0_50px_rgba(0,0,0,0.9)] flex items-center justify-center relative overflow-hidden ${
                   isPlaying ? 'animate-spin' : ''
                 }`}
                 style={{ animationDuration: '12s' }}
