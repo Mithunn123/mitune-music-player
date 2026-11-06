@@ -15,6 +15,7 @@ import { ImportModal } from './components/ImportModal';
 import { EqualizerModal } from './components/EqualizerModal';
 import { QueueDrawer } from './components/QueueDrawer';
 import { DiscoverView } from './components/DiscoverView';
+import { RecommendationsDashboard } from './components/RecommendationsDashboard';
 import { AudioProvider, useAudio } from './context/AudioContext';
 import { storageService } from './services/storageService';
 import { Track, Playlist } from './types/music';
@@ -60,7 +61,7 @@ const DEMO_TRACKS: Track[] = [
 ];
 
 const MainApp: React.FC = () => {
-  const [currentTab, setCurrentTab] = useState<NavTab>('library');
+  const [currentTab, setCurrentTab] = useState<NavTab>('feed');
   const [tracks, setTracks] = useState<Track[]>(DEMO_TRACKS);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [activePlaylist, setActivePlaylist] = useState<Playlist | null>(null);
@@ -183,7 +184,9 @@ const MainApp: React.FC = () => {
 
         {/* Dynamic Center Stage */}
         <main className="flex-1 overflow-y-auto px-8 py-6">
-          {currentTab === 'discover' ? (
+          {currentTab === 'feed' ? (
+            <RecommendationsDashboard />
+          ) : currentTab === 'discover' ? (
             <DiscoverView />
           ) : (
             <div className="space-y-6">

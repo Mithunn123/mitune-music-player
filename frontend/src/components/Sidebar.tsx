@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { Playlist } from '../types/music';
 
-export type NavTab = 'library' | 'discover' | 'favorites' | 'history' | 'playlists';
+export type NavTab = 'feed' | 'library' | 'discover' | 'favorites' | 'history' | 'playlists';
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -54,6 +54,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Main Navigation */}
       <div className="px-3 py-2 space-y-1">
+        <button
+          onClick={() => onSelectTab('feed')}
+          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+            currentTab === 'feed'
+              ? 'bg-gradient-to-r from-indigo-600/30 to-purple-600/20 text-indigo-300 border border-indigo-500/30 shadow-md shadow-indigo-600/10'
+              : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-indigo-400" />
+          <span>Recommended For You</span>
+        </button>
+
         <button
           onClick={() => onSelectTab('library')}
           className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
