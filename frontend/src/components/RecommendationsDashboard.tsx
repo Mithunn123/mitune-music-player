@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Heart, RefreshCw, BookmarkPlus } from 'lucide-react';
+import { Play, BookmarkPlus, Plus, ChevronRight } from 'lucide-react';
 import { recommendationEngine, TRENDING_SEEDS } from '../services/recommendationEngine';
 import { Track } from '../types/music';
 import { useAudio } from '../context/AudioContext';
@@ -9,210 +9,360 @@ interface RecommendationsDashboardProps {
 }
 
 export const RecommendationsDashboard: React.FC<RecommendationsDashboardProps> = ({ onOpenAddToPlaylist }) => {
-  const [headline, setHeadline] = useState('Recommended Mix');
-  const [forYouTracks, setForYouTracks] = useState<Track[]>([]);
-  const [shelves, setShelves] = useState<{ title: string; tracks: Track[] }[]>([]);
+  const [filterType, setFilterType] = useState<'All' | 'Music' | 'Podcasts'>('All');
+  const [quickAccessTracks, setQuickAccessTracks] = useState<Track[]>([]);
+  const [pickedTrack, setPickedTrack] = useState<Track | null>(null);
+  const [newFridayTracks, setNewFridayTracks] = useState<Track[]>([]);
+  const [recents, setRecents] = useState<Track[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeMood, setActiveMood] = useState<string | null>(null);
 
-  const { playTrack, currentTrack, favorites, toggleFavorite } = useAudio();
-
-  const loadFeed = async () => {
-    setIsLoading(true);
-    try {
-      const feed = await recommendationEngine.generatePersonalizedFeed();
-      setHeadline(feed.headline);
-      setForYouTracks(feed.forYouTracks);
-      setShelves(feed.genreShelves);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { playTrack, currentTrack, queue } = useAudio();
 
   useEffect(() => {
-    loadFeed();
+    const loadSpotifyHomeData = async () => {
+      setIsLoading(true);
+      try {
+        const feed = await recommendationEngine.generatePersonalizedFeed();
+        const allTracks = feed.forYouTracks;
+
+        // 1. Quick-Access Grid (8 tracks: 2 rows x 4 columns)
+        setQuickAccessTracks(allTracks.slice(0, 8));
+
+        // 2. Section 1 Hero Pick ("Picked for you")
+        setPickedTrack(allTracks[0] || null);
+
+        // 3. Section 1 Media Cards ("It's New Music Friday!")
+        if (feed.genreShelves && feed.genreShelves.length > 0) {
+          setNewFridayTracks(feed.genreShelves[0].tracks.slice(0, 4));
+        } else {
+          setNewFridayTracks(allTracks.slice(1, 5));
+        }
+
+        // 4. Section 2: "Recents"
+        const recentHistory = allTracks.slice(2, 8);
+        setRecents(recentHistory);
+      } catch (err) {
+        console.error('Failed to load Spotify-styled home feed:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSpotifyHomeData();
   }, []);
 
-  const handleMoodSelect = async (seed: { tag: string; query: string }) => {
-    setActiveMood(seed.tag);
-    setIsLoading(true);
-    try {
-      const tracks = await recommendationEngine.fetchFullSongs(seed.query, 12);
-      setHeadline(seed.tag);
-      setForYouTracks(tracks);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsLoading(false);
+  // Handle filter switching
+  const handleFilterChange = (filter: 'All' | 'Music' | 'Podcasts') => {
+    setFilterType(filter);
+    if (filter === 'Podcasts') {
+      recommendationEngine.fetchFullSongs('Trending English Podcasts Conversational', 12).then((tracks) => {
+        setQuickAccessTracks(tracks.slice(0, 8));
+        setPickedTrack(tracks[0] || null);
+        setNewFridayTracks(tracks.slice(1, 5));
+        setRecents(tracks.slice(2, 8));
+      });
+    } else {
+      recommendationEngine.generatePersonalizedFeed().then((feed) => {
+        setQuickAccessTracks(feed.forYouTracks.slice(0, 8));
+        setPickedTrack(feed.forYouTracks[0] || null);
+        setNewFridayTracks(
+          feed.genreShelves?.[0]?.tracks.slice(0, 4) || feed.forYouTracks.slice(1, 5)
+        );
+        setRecents(feed.forYouTracks.slice(2, 8));
+      });
     }
   };
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto pb-16">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-white/10">
-        <div>
-          <h2 className="text-xl font-bold text-white tracking-tight">
-            {headline}
-          </h2>
-          <p className="text-xs text-neutral-400 mt-0.5">
-            Personalized studio tracks curated from your listening taste
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {forYouTracks.length > 0 && (
-            <button
-              onClick={() => playTrack(forYouTracks[0], forYouTracks)}
-              className="px-4 py-1.5 rounded-full bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition-colors"
-            >
-              Play All
-            </button>
-          )}
-
+    <div className="space-y-8 max-w-7xl mx-auto pb-16 select-none animate-in fade-in duration-200">
+      
+      {/* ========================================================
+          1. TOP FILTER CHIPS (All, Music, Podcasts)
+         ======================================================== */}
+      <div className="flex items-center gap-2">
+        {(['All', 'Music', 'Podcasts'] as const).map((chip) => (
           <button
-            onClick={loadFeed}
-            className="p-2 rounded-lg hover:bg-white/10 text-neutral-400 hover:text-white transition-colors"
-            title="Refresh Feed"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
-      </div>
-
-      {/* Mood Filters: 8pt grid, dark neutral pills */}
-      <div className="flex gap-2 flex-wrap">
-        {TRENDING_SEEDS.map((seed) => (
-          <button
-            key={seed.tag}
-            onClick={() => handleMoodSelect(seed)}
-            className={`px-3 py-1.5 rounded-full text-xs transition-all ${
-              activeMood === seed.tag
-                ? 'bg-white text-black font-semibold'
-                : 'bg-[#121318] border border-white/10 text-neutral-400 hover:text-white hover:bg-[#181920]'
+            key={chip}
+            onClick={() => handleFilterChange(chip)}
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+              filterType === chip
+                ? 'bg-white text-black shadow-sm'
+                : 'bg-white/10 text-white hover:bg-white/15'
             }`}
           >
-            {seed.tag}
+            {chip}
           </button>
         ))}
       </div>
 
-      {/* Grid of 1:1 Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        {forYouTracks.map((track) => {
+      {/* ========================================================
+          2. QUICK-ACCESS GRID (2 rows x 4 columns)
+         ======================================================== */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {quickAccessTracks.map((track) => {
           const isCurrent = currentTrack?.id === track.id;
-          const isFav = favorites.includes(track.id);
 
           return (
             <div
               key={track.id}
-              onClick={() => playTrack(track, forYouTracks)}
-              className="group p-3 rounded-2xl bg-[#121318] hover:bg-[#181920] border border-white/10 hover:border-white/20 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+              onClick={() => playTrack(track, quickAccessTracks)}
+              className="h-14 sm:h-16 bg-white/5 hover:bg-white/10 rounded-md overflow-hidden transition-all group cursor-pointer flex items-center justify-between relative shadow-sm"
             >
-              {/* 1:1 Artwork */}
-              <div className="relative aspect-square rounded-xl overflow-hidden bg-[#181920] mb-2.5 border border-white/5">
-                <img
-                  src={track.albumArt || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80'}
-                  alt={track.title}
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80';
-                  }}
-                  className="w-full h-full object-cover"
-                />
-
-                <div
-                  className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity ${
-                    isCurrent ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                  }`}
-                >
-                  <div className="w-9 h-9 rounded-full bg-white text-black flex items-center justify-center shadow-lg">
-                    <Play className="w-4 h-4 fill-black translate-x-0.5" />
-                  </div>
+              <div className="flex items-center min-w-0 h-full flex-1">
+                {/* Left: Square thumbnail covering full card height */}
+                <div className="w-14 sm:w-16 h-full shrink-0 bg-[#242424] overflow-hidden">
+                  <img
+                    src={track.albumArt || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120&auto=format&fit=crop&q=80'}
+                    alt={track.title}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
 
-                <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFavorite(track.id);
-                    }}
-                    className="p-1.5 rounded-full bg-black/60 text-white hover:scale-105 active:scale-95 transition-all"
-                    style={{ opacity: isFav ? 1 : undefined }}
-                    title="Favorite"
-                  >
-                    <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-red-500 text-red-500' : ''}`} />
-                  </button>
-                  {onOpenAddToPlaylist && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onOpenAddToPlaylist(track);
-                      }}
-                      className="p-1.5 rounded-full bg-black/60 text-white hover:scale-105 active:scale-95 transition-all"
-                      title="Add to Playlist"
-                    >
-                      <BookmarkPlus className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
+                {/* Center: Title single-line truncated */}
+                <span className={`font-semibold text-sm truncate px-3 ${isCurrent ? 'text-[#1ed760]' : 'text-white'}`}>
+                  {track.title}
+                </span>
               </div>
 
-              {/* Left-Aligned Metadata */}
-              <p className={`text-xs font-medium truncate ${isCurrent ? 'text-white font-semibold' : 'text-neutral-200'}`}>
-                {track.title}
-              </p>
-              <p className="text-[11px] text-neutral-400 truncate mt-0.5">
-                {track.artist}
-              </p>
+              {/* Right: Hover-triggered solid green Spotify play action button */}
+              <div className="pr-3 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0 shrink-0">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    playTrack(track, quickAccessTracks);
+                  }}
+                  className="w-10 h-10 rounded-full bg-[#1ed760] hover:bg-[#1fdf64] hover:scale-105 active:scale-95 text-black flex items-center justify-center shadow-xl transition-transform"
+                  title="Play"
+                >
+                  <Play className="w-5 h-5 fill-black translate-x-0.5" />
+                </button>
+              </div>
             </div>
           );
         })}
       </div>
 
-      {/* Shelves */}
-      {shelves.map((shelf, i) => (
-        <div key={i} className="space-y-4 pt-4 border-t border-white/10">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-white tracking-tight">{shelf.title}</h3>
-            <button
-              onClick={() => playTrack(shelf.tracks[0], shelf.tracks)}
-              className="text-xs text-neutral-400 hover:text-white transition-colors"
-            >
-              Play all
-            </button>
+      {/* ========================================================
+          3. SECTION 1: "Picked for you" + "It's New Music Friday!"
+         ======================================================== */}
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          {/* Left Side: "Picked for you" Large Hero Banner (5 cols) */}
+          <div className="lg:col-span-5 space-y-3">
+            <h3 className="text-xl font-bold text-white tracking-tight">Picked for you</h3>
+
+            {pickedTrack ? (
+              <div 
+                onClick={() => playTrack(pickedTrack, quickAccessTracks)}
+                className="bg-[#181818] hover:bg-[#202020] rounded-xl p-5 transition-all group cursor-pointer border border-white/5 space-y-4 shadow-lg"
+              >
+                {/* 16:9 Rich Banner Artwork */}
+                <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-[#242424]">
+                  <img
+                    src={pickedTrack.albumArt || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=80'}
+                    alt={pickedTrack.title}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/60 backdrop-blur-md text-[10px] font-mono text-white tracking-wider uppercase font-semibold">
+                    Studio Master
+                  </div>
+                </div>
+
+                {/* Banner Metadata & Inline Action Buttons */}
+                <div className="space-y-2">
+                  <h4 className="text-xl font-extrabold text-white tracking-tight truncate">
+                    {pickedTrack.title}
+                  </h4>
+                  <p className="text-xs text-neutral-400 line-clamp-2 leading-relaxed">
+                    Official studio master by {pickedTrack.artist}. Curated by Mitune recommendation algorithms based on high global streaming engagement.
+                  </p>
+                </div>
+
+                {/* Action Buttons: Play + Add to Playlist */}
+                <div className="flex items-center gap-3 pt-1">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      playTrack(pickedTrack, quickAccessTracks);
+                    }}
+                    className="w-11 h-11 rounded-full bg-[#1ed760] hover:bg-[#1fdf64] hover:scale-105 active:scale-95 text-black flex items-center justify-center shadow-lg transition-transform"
+                    title="Play"
+                  >
+                    <Play className="w-5 h-5 fill-black translate-x-0.5" />
+                  </button>
+
+                  {onOpenAddToPlaylist && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenAddToPlaylist(pickedTrack);
+                      }}
+                      className="w-10 h-10 rounded-full border border-white/20 hover:border-white text-white hover:bg-white/10 flex items-center justify-center transition-colors"
+                      title="Add to Playlist"
+                    >
+                      <Plus className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="h-64 rounded-xl bg-[#181818] animate-pulse" />
+            )}
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-            {shelf.tracks.map((track) => (
+          {/* Right Side: "It's New Music Friday!" (7 cols) */}
+          <div className="lg:col-span-7 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-white tracking-tight">It's New Music Friday!</h3>
+                <p className="text-xs text-neutral-400 mt-0.5">The freshest official releases from creators worldwide</p>
+              </div>
+              <button 
+                onClick={() => {
+                  if (newFridayTracks.length > 0) playTrack(newFridayTracks[0], newFridayTracks);
+                }}
+                className="text-xs font-semibold text-neutral-400 hover:text-white transition-colors"
+              >
+                Show all
+              </button>
+            </div>
+
+            {/* Grid of standard media cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {newFridayTracks.map((track) => {
+                const isCurrent = currentTrack?.id === track.id;
+
+                return (
+                  <div
+                    key={track.id}
+                    onClick={() => playTrack(track, newFridayTracks)}
+                    className="p-3.5 bg-[#181818] hover:bg-[#242424] rounded-lg transition-all group cursor-pointer flex flex-col justify-between relative shadow-sm"
+                  >
+                    {/* Square 1:1 artwork with rounded-md corners */}
+                    <div className="relative aspect-square rounded-md overflow-hidden bg-[#242424] mb-3">
+                      <img
+                        src={track.albumArt || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80'}
+                        alt={track.title}
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover"
+                      />
+
+                      {/* Spotify hover play button */}
+                      <div className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-2 group-hover:translate-y-0">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            playTrack(track, newFridayTracks);
+                          }}
+                          className="w-10 h-10 rounded-full bg-[#1ed760] hover:bg-[#1fdf64] hover:scale-105 active:scale-95 text-black flex items-center justify-center shadow-2xl transition-transform"
+                          title="Play"
+                        >
+                          <Play className="w-5 h-5 fill-black translate-x-0.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Title & 2-line truncated subtitle/artist */}
+                    <div>
+                      <h5 className={`font-bold text-sm truncate ${isCurrent ? 'text-[#1ed760]' : 'text-white'}`}>
+                        {track.title}
+                      </h5>
+                      <p className="text-xs text-neutral-400 line-clamp-2 mt-1 leading-snug">
+                        {track.artist} &bull; {track.album || 'Single'}
+                      </p>
+                    </div>
+
+                    {/* Bookmark action on hover */}
+                    {onOpenAddToPlaylist && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenAddToPlaylist(track);
+                        }}
+                        className="mt-2 text-xs text-neutral-400 hover:text-white flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Add to Playlist"
+                      >
+                        <BookmarkPlus className="w-3.5 h-3.5" />
+                        <span>Save</span>
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* ========================================================
+          4. SECTION 2: "Recents" Horizontal Media Card Row
+         ======================================================== */}
+      <div className="space-y-4 pt-2">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-bold text-white tracking-tight">Recents</h3>
+          <button
+            onClick={() => {
+              if (recents.length > 0) playTrack(recents[0], recents);
+            }}
+            className="text-xs font-semibold text-neutral-400 hover:text-white transition-colors"
+          >
+            Show all
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+          {recents.map((track) => {
+            const isCurrent = currentTrack?.id === track.id;
+
+            return (
               <div
                 key={track.id}
-                onClick={() => playTrack(track, shelf.tracks)}
-                className="group p-2.5 rounded-2xl bg-[#121318] hover:bg-[#181920] border border-white/10 hover:border-white/20 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                onClick={() => playTrack(track, recents)}
+                className="p-3 bg-[#181818] hover:bg-[#242424] rounded-lg transition-all group cursor-pointer flex flex-col justify-between relative shadow-sm"
               >
-                <div className="relative aspect-square rounded-xl overflow-hidden bg-[#181920] mb-2 border border-white/5">
+                {/* 1:1 Cover Art */}
+                <div className="relative aspect-square rounded-md overflow-hidden bg-[#242424] mb-3">
                   <img
                     src={track.albumArt || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80'}
                     alt={track.title}
                     referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80';
-                    }}
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Play className="w-4 h-4 fill-white text-white" />
+
+                  {/* Play Button Overlay on Hover */}
+                  <div className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-2 group-hover:translate-y-0">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        playTrack(track, recents);
+                      }}
+                      className="w-9 h-9 rounded-full bg-[#1ed760] hover:bg-[#1fdf64] hover:scale-105 active:scale-95 text-black flex items-center justify-center shadow-xl transition-transform"
+                      title="Play"
+                    >
+                      <Play className="w-4 h-4 fill-black translate-x-0.5" />
+                    </button>
                   </div>
                 </div>
-                <p className="text-xs font-medium text-neutral-200 truncate">{track.title}</p>
-                <p className="text-[10px] text-neutral-500 truncate">{track.artist}</p>
+
+                {/* Title & Metadata */}
+                <div>
+                  <h5 className={`font-semibold text-xs truncate ${isCurrent ? 'text-[#1ed760]' : 'text-white'}`}>
+                    {track.title}
+                  </h5>
+                  <p className="text-[11px] text-neutral-400 truncate mt-0.5">
+                    {track.artist}
+                  </p>
+                </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
-      ))}
+      </div>
+
     </div>
   );
 };
