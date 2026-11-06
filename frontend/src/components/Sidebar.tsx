@@ -1,127 +1,165 @@
 import React from 'react';
-import { Search } from 'lucide-react';
+import { 
+  Library, 
+  Compass, 
+  Heart, 
+  History, 
+  ListMusic, 
+  FolderPlus, 
+  Sparkles,
+  Sliders
+} from 'lucide-react';
+import { Playlist } from '../types/music';
 
-interface NavLink {
-  label: string;
-  href: string;
+export type NavTab = 'library' | 'discover' | 'favorites' | 'history' | 'playlists';
+
+interface SidebarProps {
+  currentTab: NavTab;
+  onSelectTab: (tab: NavTab) => void;
+  playlists: Playlist[];
+  activePlaylistId: string | null;
+  onSelectPlaylist: (playlist: Playlist) => void;
+  onOpenImport: () => void;
+  onOpenEqualizer: () => void;
 }
 
-interface MoodPill {
-  label: string;
-  onSelect: () => void;
-}
-
-interface GenreFilter {
-  label: string;
-  onToggle: () => void;
-}
-
-export const Sidebar: React.FC = () => {
-  const [activeGenre, setActiveGenre] = React.useState<string | null>(null);
-
-  const navLinks: NavLink[] = [
-    { label: 'My Library', href: '#' },
-    { label: 'Discover', href: '#' },
-    { label: 'Curators', href: '#' },
-    { label: 'Genres', href: '#' },
-    { label: 'Settings', href: '#' },
-  ];
-
-  const moods: MoodPill[] = [
-    { label: 'Chill', onSelect: () => {} },
-    { label: 'Energetic', onSelect: () => {} },
-    { label: 'Focus', onSelect: () => {} },
-    { label: 'Nostalgic', onSelect: () => {} },
-    { label: 'Atmospheric', onSelect: () => {} },
-    { label: 'Late Night', onSelect: () => {} },
-  ];
-
-  const genres: GenreFilter[] = [
-    { label: 'Ambient', onToggle: () => {} },
-    { label: 'Indie', onToggle: () => {} },
-    { label: 'Electronic', onToggle: () => {} },
-    { label: 'Lo-Fi', onToggle: () => {} },
-    { label: 'Neo-Soul', onToggle: () => {} },
-    { label: 'Pop', onToggle: () => {} },
-  ];
-
+export const Sidebar: React.FC<SidebarProps> = ({
+  currentTab,
+  onSelectTab,
+  playlists,
+  activePlaylistId,
+  onSelectPlaylist,
+  onOpenImport,
+  onOpenEqualizer,
+}) => {
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-zinc-950 border-r border-white/10 backdrop-blur-lg flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+    <aside className="w-64 bg-zinc-950/80 backdrop-blur-xl border-r border-white/5 flex flex-col h-full select-none shrink-0">
+      {/* Brand Header */}
+      <div className="p-6 pb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-zinc-100 font-bold text-sm">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-bold text-lg tracking-wider">
             M
           </div>
-          <h1 className="text-xl font-semibold text-white">MItone</h1>
+          <div>
+            <h1 className="text-base font-bold text-white tracking-wide flex items-center gap-1.5">
+              mitune
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                PRO
+              </span>
+            </h1>
+            <p className="text-[11px] text-zinc-500">Local & Cloud Player</p>
+          </div>
         </div>
-        <Search className="w-5 h-5 text-zinc-400" />
       </div>
 
-      {/* Navigation Links */}
-      <nav className="flex-1 pt-2">
-        <ul className="flex flex-col gap-2 px-2">
-          {navLinks.map((link, i) => (
-            <li key={i}>
-              <a
-                href={link.href}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-zinc-400 hover:text-white hover:bg-white/5 transition-colors text-sm font-medium"
-                style={{ background: activeGenre === 'genres' ? 'rgba(255,255,255,0.05)' : 'transparent' }}
-              >
-                {link.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      {/* Main Navigation */}
+      <div className="px-3 py-2 space-y-1">
+        <button
+          onClick={() => onSelectTab('library')}
+          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+            currentTab === 'library'
+              ? 'bg-indigo-600/15 text-indigo-400 border border-indigo-500/20'
+              : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+          }`}
+        >
+          <Library className="w-4 h-4" />
+          <span>My Library</span>
+        </button>
 
-      {/* Mood Selector */}
-      <div className="px-2 pt-3 border-t border-white/10">
-        <h2 className="text-xs text-zinc-500 uppercase tracking-widest mb-2">Mood</h2>
-        <div className="flex flex-wrap gap-1">
-          {moods.map((mood, i) => (
+        <button
+          onClick={() => onSelectTab('discover')}
+          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+            currentTab === 'discover'
+              ? 'bg-indigo-600/15 text-indigo-400 border border-indigo-500/20'
+              : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+          }`}
+        >
+          <Compass className="w-4 h-4" />
+          <span>Discover Online</span>
+        </button>
+
+        <button
+          onClick={() => onSelectTab('favorites')}
+          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+            currentTab === 'favorites'
+              ? 'bg-indigo-600/15 text-indigo-400 border border-indigo-500/20'
+              : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+          }`}
+        >
+          <Heart className="w-4 h-4" />
+          <span>Favorites</span>
+        </button>
+
+        <button
+          onClick={() => onSelectTab('history')}
+          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+            currentTab === 'history'
+              ? 'bg-indigo-600/15 text-indigo-400 border border-indigo-500/20'
+              : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+          }`}
+        >
+          <History className="w-4 h-4" />
+          <span>Listening History</span>
+        </button>
+      </div>
+
+      {/* Playlists section */}
+      <div className="flex-1 overflow-y-auto px-3 py-4 mt-2 border-t border-white/5 space-y-1">
+        <div className="flex items-center justify-between px-3 mb-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+            Playlists
+          </span>
+          <button
+            onClick={onOpenImport}
+            className="p-1 hover:text-white text-zinc-400 hover:bg-white/5 rounded-md transition-colors"
+            title="Import or Create Playlist"
+          >
+            <FolderPlus className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {playlists.length === 0 ? (
+          <div className="px-3 py-4 text-xs text-zinc-600 italic">
+            No saved playlists yet. Click '+' to import Spotify/YT or JSON.
+          </div>
+        ) : (
+          playlists.map((playlist) => (
             <button
-              key={i}
-              className="flex items-center gap-1 rounded-full px-2 py-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-white/5 transition-colors text-xs font-medium"
-              style={{ background: activeGenre === 'mood' ? 'rgba(255,255,255,0.05)' : 'transparent' }}
+              key={playlist.id}
+              onClick={() => onSelectPlaylist(playlist)}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-left truncate transition-all ${
+                activePlaylistId === playlist.id
+                  ? 'bg-white/10 text-white font-medium'
+                  : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+              }`}
             >
-              {mood.label}
+              <ListMusic className="w-4 h-4 shrink-0 text-zinc-500" />
+              <span className="truncate">{playlist.name}</span>
+              <span className="text-[10px] text-zinc-600 ml-auto shrink-0 font-mono">
+                {playlist.tracks.length}
+              </span>
             </button>
-          ))}
-        </div>
+          ))
+        )}
       </div>
 
-      {/* Genre Filters */}
-      <div className="px-2 pt-3 border-t border-white/10">
-        <h2 className="text-xs text-zinc-500 uppercase tracking-widest mb-2">Genre</h2>
-        <div className="flex flex-wrap gap-1">
-          {genres.map((genre, i) => (
-            <button
-              key={i}
-              className="flex items-center gap-1.5 rounded-full px-2 py-1 text-zinc-400 hover:bg-white/5 hover:text-white transition-colors text-xs font-medium"
-              onClick={(e) => {
-                e.stopPropagation();
-                genre.onToggle();
-                setActiveGenre(genre.label);
-              }}
-            >
-              {genre.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Footer Quick Controls */}
+      <div className="p-3 border-t border-white/5 space-y-1">
+        <button
+          onClick={onOpenEqualizer}
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-zinc-400 hover:text-white hover:bg-white/5 transition-all"
+        >
+          <Sliders className="w-3.5 h-3.5 text-indigo-400" />
+          <span>Audio EQ & Effects</span>
+        </button>
 
-      {/* Mini Now-Playing widget */}
-      <div className="px-2 pb-4 border-t border-white/10 flex items-center gap-3">
-        <img
-          src="/placeholder-album.svg"
-          alt="Album art"
-          className="w-8 h-8 rounded object-cover"
-        />
-        <div>
-          <p className="text-zinc-400 text-sm">No playlist playing</p>
-          <p className="text-zinc-500 text-xs">Click to add tracks</p>
-        </div>
+        <button
+          onClick={onOpenImport}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600/15 border border-indigo-500/25 text-indigo-300 hover:bg-indigo-600/25 transition-all"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Import Music / URL</span>
+        </button>
       </div>
     </aside>
   );
