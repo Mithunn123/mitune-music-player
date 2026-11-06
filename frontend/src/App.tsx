@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Search, 
+  Search as SearchIcon, 
   Sparkles, 
   FolderPlus, 
   Music2, 
   Flame, 
   Radio, 
-  Layers 
+  Layers,
+  Sliders,
+  Maximize2
 } from 'lucide-react';
 import { Sidebar, NavTab } from './components/Sidebar';
 import { TrackList } from './components/TrackList';
@@ -16,6 +18,9 @@ import { EqualizerModal } from './components/EqualizerModal';
 import { QueueDrawer } from './components/QueueDrawer';
 import { DiscoverView } from './components/DiscoverView';
 import { RecommendationsDashboard } from './components/RecommendationsDashboard';
+import { SettingsView } from './components/SettingsView';
+import { CreatePlaylistModal } from './components/CreatePlaylistModal';
+import { AmbientMode } from './components/AmbientMode';
 import { AudioProvider, useAudio } from './context/AudioContext';
 import { storageService } from './services/storageService';
 import { Track, Playlist } from './types/music';
@@ -23,55 +28,59 @@ import { Track, Playlist } from './types/music';
 // Initial starter collection
 const DEMO_TRACKS: Track[] = [
   {
-    id: 'demo-1',
-    title: 'Midnight City',
-    artist: 'M83',
-    album: 'Hurry Up, We\'re Dreaming',
-    duration: 243,
-    albumArt: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300&auto=format&fit=crop&q=80',
-    source: 'demo',
-    streamUrl: 'https://cdn.freesound.org/previews/612/612089_5674468-lq.mp3',
+    id: 'yt-fHI8X4OXluQ',
+    youtubeId: 'fHI8X4OXluQ',
+    title: 'The Weeknd - Blinding Lights (Official Audio)',
+    artist: 'The Weeknd',
+    album: 'After Hours',
+    duration: 200,
+    albumArt: 'https://i.ytimg.com/vi/fHI8X4OXluQ/hqdefault.jpg',
+    source: 'youtube',
     genre: 'Synthwave',
-    mood: 'Chill',
-  },
-  {
-    id: 'demo-2',
-    title: 'Neon Skyline Dreams',
-    artist: 'Antigravity Studio',
-    album: 'Cyber Echoes',
-    duration: 185,
-    albumArt: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=300&auto=format&fit=crop&q=80',
-    source: 'demo',
-    streamUrl: 'https://cdn.freesound.org/previews/655/655317_11861866-lq.mp3',
-    genre: 'Electronic',
     mood: 'Energetic',
   },
   {
-    id: 'demo-3',
-    title: 'Atmospheric Lo-Fi Rain',
-    artist: 'Lofi Cafe',
-    album: 'Study Sessions Vol. 1',
-    duration: 215,
-    albumArt: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=300&auto=format&fit=crop&q=80',
-    source: 'demo',
-    streamUrl: 'https://cdn.freesound.org/previews/530/530415_1648170-lq.mp3',
-    genre: 'Lo-Fi',
+    id: 'yt-yKNxeF4KMsY',
+    youtubeId: 'yKNxeF4KMsY',
+    title: 'Coldplay - Yellow (Official Video)',
+    artist: 'Coldplay',
+    album: 'Parachutes',
+    duration: 269,
+    albumArt: 'https://i.ytimg.com/vi/yKNxeF4KMsY/hqdefault.jpg',
+    source: 'youtube',
+    genre: 'Rock',
+    mood: 'Chill',
+  },
+  {
+    id: 'yt-V9PVRfjEBTI',
+    youtubeId: 'V9PVRfjEBTI',
+    title: 'Billie Eilish - BIRDS OF A FEATHER (Official Video)',
+    artist: 'Billie Eilish',
+    album: 'HIT ME HARD AND SOFT',
+    duration: 231,
+    albumArt: 'https://i.ytimg.com/vi/V9PVRfjEBTI/hqdefault.jpg',
+    source: 'youtube',
+    genre: 'Pop',
     mood: 'Focus',
   },
 ];
 
 const MainApp: React.FC = () => {
-  const [currentTab, setCurrentTab] = useState<NavTab>('feed');
+  // Navigation State - Search is on top
+  const [currentTab, setCurrentTab] = useState<NavTab>('discover');
   const [tracks, setTracks] = useState<Track[]>(DEMO_TRACKS);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [activePlaylist, setActivePlaylist] = useState<Playlist | null>(null);
   const [searchFilter, setSearchFilter] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // Modals & Panels
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isEqOpen, setIsEqOpen] = useState(false);
   const [isQueueOpen, setIsQueueOpen] = useState(false);
+  const [isCreatePlaylistOpen, setIsCreatePlaylistOpen] = useState(false);
+  const [isAmbientModeOpen, setIsAmbientModeOpen] = useState(false);
 
   const { playTrack, favorites, history } = useAudio();
 
@@ -102,6 +111,24 @@ const MainApp: React.FC = () => {
     }
   };
 
+  const handleCreatePlaylist = async (name: string, description: string) => {
+    const newPlaylist: Playlist = {
+      id: `pl-${Date.now()}`,
+      name,
+      description,
+      type: 'custom',
+      trackCount: 0,
+      tracks: [],
+      createdAt: Date.now(),
+      coverArt: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80',
+    };
+
+    await storageService.savePlaylist(newPlaylist);
+    setPlaylists((prev) => [newPlaylist, ...prev]);
+    setActivePlaylist(newPlaylist);
+    setCurrentTab('playlists');
+  };
+
   const handleSelectPlaylist = (pl: Playlist) => {
     setActivePlaylist(pl);
     setCurrentTab('playlists');
@@ -116,7 +143,6 @@ const MainApp: React.FC = () => {
     } else if (currentTab === 'playlists' && activePlaylist) {
       result = activePlaylist.tracks;
     } else if (currentTab === 'history') {
-      // Return history tracks
       const historyIds = new Set(history.map((h: any) => h.trackId));
       result = tracks.filter((t) => historyIds.has(t.id));
     }
@@ -142,7 +168,7 @@ const MainApp: React.FC = () => {
 
   return (
     <div className="flex h-screen w-screen bg-zinc-950 text-zinc-100 overflow-hidden font-sans select-none">
-      {/* Navigation Sidebar */}
+      {/* Navigation Sidebar with Collapse/Expand */}
       <Sidebar
         currentTab={currentTab}
         onSelectTab={(tab) => {
@@ -154,6 +180,10 @@ const MainApp: React.FC = () => {
         onSelectPlaylist={handleSelectPlaylist}
         onOpenImport={() => setIsImportOpen(true)}
         onOpenEqualizer={() => setIsEqOpen(true)}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        onOpenCreatePlaylist={() => setIsCreatePlaylistOpen(true)}
+        onOpenAmbientMode={() => setIsAmbientModeOpen(true)}
       />
 
       {/* Main Studio Center */}
@@ -161,7 +191,7 @@ const MainApp: React.FC = () => {
         {/* Top Header Bar */}
         <header className="h-16 px-8 border-b border-white/5 flex items-center justify-between gap-4 shrink-0">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
             <input
               type="text"
               placeholder="Search library, artists, titles..."
@@ -173,10 +203,27 @@ const MainApp: React.FC = () => {
 
           <div className="flex items-center gap-3">
             <button
+              onClick={() => setIsAmbientModeOpen(true)}
+              className="px-3 py-1.5 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-300 hover:bg-purple-600/30 font-medium text-xs flex items-center gap-1.5 transition-all shadow-md"
+              title="Open Ambient Vinyl CD Mode"
+            >
+              <Maximize2 className="w-3.5 h-3.5 text-purple-400" />
+              <span>Ambient Mode</span>
+            </button>
+
+            <button
+              onClick={() => setIsCreatePlaylistOpen(true)}
+              className="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-zinc-300 hover:text-white hover:bg-white/10 font-medium text-xs flex items-center gap-1.5 transition-all"
+            >
+              <FolderPlus className="w-3.5 h-3.5" />
+              <span>Create Playlist</span>
+            </button>
+
+            <button
               onClick={() => setIsImportOpen(true)}
               className="px-3.5 py-1.5 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-600/30 font-medium text-xs flex items-center gap-2 transition-all"
             >
-              <FolderPlus className="w-3.5 h-3.5" />
+              <Music2 className="w-3.5 h-3.5" />
               <span>Import Audio</span>
             </button>
           </div>
@@ -184,10 +231,12 @@ const MainApp: React.FC = () => {
 
         {/* Dynamic Center Stage */}
         <main className="flex-1 overflow-y-auto px-8 py-6">
-          {currentTab === 'feed' ? (
-            <RecommendationsDashboard />
-          ) : currentTab === 'discover' ? (
+          {currentTab === 'discover' ? (
             <DiscoverView />
+          ) : currentTab === 'feed' ? (
+            <RecommendationsDashboard />
+          ) : currentTab === 'settings' ? (
+            <SettingsView />
           ) : (
             <div className="space-y-6">
               {/* Header Hero Banner */}
@@ -271,6 +320,12 @@ const MainApp: React.FC = () => {
       </div>
 
       {/* Floating Modals and Drawers */}
+      <CreatePlaylistModal
+        isOpen={isCreatePlaylistOpen}
+        onClose={() => setIsCreatePlaylistOpen(false)}
+        onCreate={handleCreatePlaylist}
+      />
+
       <ImportModal
         isOpen={isImportOpen}
         onClose={() => setIsImportOpen(false)}
@@ -285,6 +340,12 @@ const MainApp: React.FC = () => {
       <QueueDrawer
         isOpen={isQueueOpen}
         onClose={() => setIsQueueOpen(false)}
+      />
+
+      {/* Full Screen Ambient Vinyl Mode */}
+      <AmbientMode
+        isOpen={isAmbientModeOpen}
+        onClose={() => setIsAmbientModeOpen(false)}
       />
 
       {/* Headless Global Full-Track YouTube Streaming Mount */}
