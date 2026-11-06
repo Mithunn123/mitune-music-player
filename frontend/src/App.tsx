@@ -88,13 +88,29 @@ const MainApp: React.FC = () => {
   const [trackToAddToPlaylist, setTrackToAddToPlaylist] = useState<Track | null>(null);
 
   const { playTrack, favorites, history } = useAudio();
+  const [favoriteTracks, setFavoriteTracks] = useState<Track[]>([]);
+  const [historyTracks, setHistoryTracks] = useState<Track[]>([]);
 
-  // Load playlists from IndexedDB
+  // Load playlists, favorites, and history from IndexedDB
   useEffect(() => {
     storageService.getAllPlaylists().then((saved) => {
       setPlaylists(saved);
     });
   }, []);
+
+  // Fetch full favorite tracks whenever favorites array updates
+  useEffect(() => {
+    storageService.getFavoriteTracks().then((favs) => {
+      setFavoriteTracks(favs);
+    });
+  }, [favorites]);
+
+  // Fetch full history tracks whenever history array updates
+  useEffect(() => {
+    storageService.getRecentHistoryTracks().then((hist) => {
+      setHistoryTracks(hist);
+    });
+  }, [history]);
 
   const handleImportTracks = async (newTracks: Track[], playlistName?: string) => {
     setTracks((prev) => [...newTracks, ...prev]);
@@ -195,12 +211,30 @@ const MainApp: React.FC = () => {
     let result = tracks;
 
     if (currentTab === 'favorites') {
-      result = tracks.filter((t) => favorites.includes(t.id));
+      const favMap = new Map<string, Track>();
+      // First populate from favoriteTracks loaded from IndexedDB
+      favoriteTracks.forEach((t) => favMap.set(String(t.id), t));
+      // Also check memory tracks matching favorite IDs
+      tracks.forEach((t) => {
+        if (favorites.includes(String(t.id))) {
+          favMap.set(String(t.id), t);
+        }
+      });
+      result = Array.from(favMap.values());
     } else if (currentTab === 'playlists' && activePlaylist) {
       result = activePlaylist.tracks;
     } else if (currentTab === 'history') {
-      const historyIds = new Set(history.map((h: any) => h.trackId));
-      result = tracks.filter((t) => historyIds.has(t.id));
+      const histMap = new Map<string, Track>();
+      // Populate from loaded history tracks
+      historyTracks.forEach((t) => histMap.set(String(t.id), t));
+      // Also merge any in-memory tracks matching history
+      const historyIds = new Set(history.map((h: any) => String(h.trackId)));
+      tracks.forEach((t) => {
+        if (historyIds.has(String(t.id)) && !histMap.has(String(t.id))) {
+          histMap.set(String(t.id), t);
+        }
+      });
+      result = Array.from(histMap.values());
     }
 
     if (selectedGenre) {

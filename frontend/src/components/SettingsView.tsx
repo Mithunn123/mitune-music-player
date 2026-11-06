@@ -13,9 +13,10 @@ import {
   Music2
 } from 'lucide-react';
 import { storageService } from '../services/storageService';
+import { useAudio } from '../context/AudioContext';
 
 export const SettingsView: React.FC = () => {
-  const [audioQuality, setAudioQuality] = useState<'high' | 'ultra' | 'lossless'>('ultra');
+  const { audioQuality, setAudioQuality } = useAudio();
   const [crossfade, setCrossfade] = useState<number>(2);
   const [normalizeVolume, setNormalizeVolume] = useState<boolean>(true);
   const [cacheCleared, setCacheCleared] = useState<boolean>(false);
@@ -56,7 +57,7 @@ export const SettingsView: React.FC = () => {
               <p className="text-xs text-zinc-500">Select preferred audio fidelity for streaming tracks.</p>
             </div>
             <div className="flex items-center gap-2 bg-zinc-950 p-1 rounded-xl border border-white/5">
-              {(['high', 'ultra', 'lossless'] as const).map((q) => (
+              {(['low', 'normal', 'high'] as const).map((q) => (
                 <button
                   key={q}
                   onClick={() => setAudioQuality(q)}
@@ -66,7 +67,7 @@ export const SettingsView: React.FC = () => {
                       : 'text-zinc-400 hover:text-white'
                   }`}
                 >
-                  {q === 'ultra' ? 'Ultra (320k)' : q === 'lossless' ? 'Studio FLAC' : 'High (256k)'}
+                  {q === 'high' ? 'High (320k)' : q === 'normal' ? 'Normal (192k)' : 'Low (96k)'}
                 </button>
               ))}
             </div>

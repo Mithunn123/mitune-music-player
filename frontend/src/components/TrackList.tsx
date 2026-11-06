@@ -133,7 +133,7 @@ export const TrackList: React.FC<TrackListProps> = ({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    toggleFavorite(track.id);
+                    toggleFavorite(track);
                   }}
                   className="opacity-0 group-hover:opacity-100 p-1.5 hover:text-red-400 hover:scale-105 active:scale-95 transition-all"
                   style={{ opacity: isFav ? 1 : undefined }}

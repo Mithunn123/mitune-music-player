@@ -244,7 +244,7 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose, onOpe
                 </div>
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => currentTrack && toggleFavorite(currentTrack.id)}
+                    onClick={() => currentTrack && toggleFavorite(currentTrack)}
                     className="p-2 text-neutral-400 hover:text-white hover:scale-105 active:scale-95 transition-all shrink-0"
                     title="Favorite"
                   >
@@ -396,7 +396,7 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose, onOpe
               <Shuffle className="w-4 h-4" />
             </button>
             <button
-              onClick={() => currentTrack && toggleFavorite(currentTrack.id)}
+              onClick={() => currentTrack && toggleFavorite(currentTrack)}
               className="p-2.5 rounded-xl text-neutral-400 hover:text-white hover:scale-105 active:scale-95 transition-all"
               title="Favorite"
             >

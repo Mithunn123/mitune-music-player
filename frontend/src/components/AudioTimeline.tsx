@@ -141,7 +141,7 @@ export const AudioTimeline: React.FC<AudioTimelineProps> = ({
 
               {/* Favorite Action with micro-interaction */}
               <button
-                onClick={() => currentTrack && toggleFavorite(currentTrack.id)}
+                onClick={() => currentTrack && toggleFavorite(currentTrack)}
                 className="p-1.5 text-neutral-400 hover:text-white hover:scale-105 active:scale-95 transition-all shrink-0"
                 title={isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
               >

@@ -29,6 +29,7 @@ interface MitoneDB extends DBSchema {
       title: string;
       artist: string;
       playedAt: number;
+      track?: Track;
     };
     indexes: { 'by-played': number };
   };
@@ -37,6 +38,7 @@ interface MitoneDB extends DBSchema {
     value: {
       trackId: string;
       addedAt: number;
+      track?: Track;
     };
   };
 }
@@ -96,6 +98,22 @@ export const storageService = {
     await db.delete('playlists', id);
   },
 
+  // Tracks
+  async saveTrack(track: Track): Promise<void> {
+    const db = await getDB();
+    await db.put('tracks', track);
+  },
+
+  async getAllTracks(): Promise<Track[]> {
+    const db = await getDB();
+    return db.getAll('tracks');
+  },
+
+  async getTrack(id: string): Promise<Track | undefined> {
+    const db = await getDB();
+    return db.get('tracks', id);
+  },
+
   // Resolver Cache
   async getCachedStream(key: string): Promise<string | null> {
     const db = await getDB();
@@ -120,37 +138,111 @@ export const storageService = {
   async getFavorites(): Promise<string[]> {
     const db = await getDB();
     const all = await db.getAll('favorites');
-    return all.map((f) => f.trackId);
+    return all.map((f) => String(f.trackId));
   },
 
-  async toggleFavorite(trackId: string): Promise<boolean> {
+  async getFavoriteTracks(): Promise<Track[]> {
     const db = await getDB();
-    const existing = await db.get('favorites', trackId);
+    const all = await db.getAll('favorites');
+    const tracks: Track[] = [];
+    for (const f of all) {
+      if (f.track) {
+        tracks.push(f.track);
+      } else {
+        const stored = await db.get('tracks', f.trackId);
+        if (stored) tracks.push(stored);
+      }
+    }
+    return tracks;
+  },
+
+  async toggleFavorite(trackId: string, trackData?: Track): Promise<boolean> {
+    const db = await getDB();
+    const normalizedId = String(trackId);
+    const existing = await db.get('favorites', normalizedId);
     if (existing) {
-      await db.delete('favorites', trackId);
+      await db.delete('favorites', normalizedId);
       return false;
     } else {
-      await db.put('favorites', { trackId, addedAt: Date.now() });
+      let resolvedTrack = trackData;
+      if (!resolvedTrack) {
+        resolvedTrack = await db.get('tracks', normalizedId);
+      } else {
+        await db.put('tracks', resolvedTrack);
+      }
+      await db.put('favorites', { trackId: normalizedId, addedAt: Date.now(), track: resolvedTrack });
       return true;
     }
   },
 
   // History
-  async addHistory(trackId: string, title: string, artist: string): Promise<void> {
+  async addHistory(trackId: string, title: string, artist: string, trackData?: Track): Promise<void> {
     const db = await getDB();
+    const normalizedId = String(trackId);
+    // Deduplicate consecutive recent entries (e.g., if replaying or spam clicking)
+    const tx = db.transaction('history', 'readonly');
+    const index = tx.store.index('by-played');
+    const records = await index.getAll();
+    const lastRecord = records[records.length - 1];
+    if (lastRecord && String(lastRecord.trackId) === normalizedId && Date.now() - lastRecord.playedAt < 5000) {
+      return;
+    }
+
+    let resolvedTrack = trackData;
+    if (!resolvedTrack) {
+      resolvedTrack = await db.get('tracks', normalizedId);
+    } else {
+      await db.put('tracks', resolvedTrack);
+    }
+
     await db.add('history', {
-      trackId,
+      trackId: normalizedId,
       title,
       artist,
       playedAt: Date.now(),
+      track: resolvedTrack,
     });
   },
 
-  async getRecentHistory(limit = 20) {
+  async getRecentHistory(limit = 30) {
     const db = await getDB();
     const tx = db.transaction('history', 'readonly');
     const index = tx.store.index('by-played');
     const records = await index.getAll();
     return records.reverse().slice(0, limit);
+  },
+
+  async getRecentHistoryTracks(limit = 30): Promise<Track[]> {
+    const db = await getDB();
+    const tx = db.transaction('history', 'readonly');
+    const index = tx.store.index('by-played');
+    const records = (await index.getAll()).reverse().slice(0, limit);
+    const tracks: Track[] = [];
+    const seenIds = new Set<string>();
+
+    for (const r of records) {
+      if (!seenIds.has(String(r.trackId))) {
+        seenIds.add(String(r.trackId));
+        if (r.track) {
+          tracks.push(r.track);
+        } else {
+          const stored = await db.get('tracks', String(r.trackId));
+          if (stored) {
+            tracks.push(stored);
+          } else {
+            tracks.push({
+              id: String(r.trackId),
+              title: r.title,
+              artist: r.artist,
+              album: 'Single',
+              duration: 180,
+              albumArt: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300&auto=format&fit=crop&q=80',
+              source: 'youtube',
+            });
+          }
+        }
+      }
+    }
+    return tracks;
   },
 };

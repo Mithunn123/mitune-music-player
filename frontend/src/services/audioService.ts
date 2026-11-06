@@ -22,6 +22,8 @@ class AudioService {
   private currentUrl = '';
   private corsRetry = false;
 
+  private currentQuality: 'low' | 'normal' | 'high' = 'high';
+
   // 5-Band EQ Frequencies
   private readonly EQ_FREQS = [60, 250, 1000, 4000, 14000];
 
@@ -200,9 +202,39 @@ class AudioService {
   }
 
   public setEqualizerBand(index: number, gain: number) {
-    if (this.equalizerBands[index]) {
-      this.equalizerBands[index].gain.value = gain;
+    if (!this.isInitialized) {
+      this.initWebAudio();
     }
+    const filter = this.equalizerBands[index];
+    if (filter) {
+      if (this.audioContext && this.audioContext.state !== 'closed') {
+        try {
+          filter.gain.setValueAtTime(gain, this.audioContext.currentTime);
+        } catch {
+          filter.gain.value = gain;
+        }
+      } else {
+        filter.gain.value = gain;
+      }
+    }
+  }
+
+  public setAudioQuality(quality: 'low' | 'normal' | 'high', alternateStreamUrl?: string) {
+    this.currentQuality = quality;
+    if (alternateStreamUrl && alternateStreamUrl !== this.currentUrl) {
+      const prevPos = this.audioElement.currentTime;
+      const wasPlaying = !this.audioElement.paused && !this.audioElement.ended;
+      this.currentUrl = alternateStreamUrl;
+      this.audioElement.src = alternateStreamUrl;
+      this.audioElement.currentTime = prevPos;
+      if (wasPlaying) {
+        this.audioElement.play().catch(() => {});
+      }
+    }
+  }
+
+  public getAudioQuality(): 'low' | 'normal' | 'high' {
+    return this.currentQuality;
   }
 
   public getVisualizerData(): Uint8Array | null {

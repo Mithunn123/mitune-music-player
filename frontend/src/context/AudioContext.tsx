@@ -29,10 +29,12 @@ interface AudioContextType {
   previousTrack: () => void;
   toggleShuffle: () => void;
   toggleRepeat: () => void;
-  toggleFavorite: (trackId: string) => Promise<void>;
+  toggleFavorite: (trackOrId: string | Track) => Promise<void>;
   addToQueue: (track: Track) => void;
   clearQueue: () => void;
   setEqualizerBand: (bandIndex: number, gain: number) => void;
+  audioQuality: 'low' | 'normal' | 'high';
+  setAudioQuality: (quality: 'low' | 'normal' | 'high') => void;
 }
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
@@ -47,6 +49,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isShuffle, setIsShuffle] = useState(false);
   const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('off');
   const [activeEngine, setActiveEngine] = useState<'youtube' | 'webaudio'>('youtube');
+  const [audioQuality, setAudioQualityState] = useState<'low' | 'normal' | 'high'>('high');
 
   const [queue, setQueue] = useState<Track[]>([]);
   const [queueIndex, setQueueIndex] = useState<number>(-1);
@@ -143,7 +146,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setCurrentTrack(track);
     setDuration(track.duration || 0);
 
-    storageService.addHistory(track.id, track.title, track.artist);
+    storageService.addHistory(track.id, track.title, track.artist, track);
     storageService.getRecentHistory().then(setHistory);
 
     await executePlayback(track);
@@ -204,7 +207,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setCurrentTrack(track);
     setDuration(track.duration || 0);
 
-    storageService.addHistory(track.id, track.title, track.artist);
+    storageService.addHistory(track.id, track.title, track.artist, track);
     storageService.getRecentHistory().then(setHistory);
 
     await executePlayback(track);
@@ -272,13 +275,33 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const toggleShuffle = () => setIsShuffle(!isShuffle);
   const toggleRepeat = () => setRepeatMode((p) => (p === 'off' ? 'all' : p === 'all' ? 'one' : 'off'));
 
-  const toggleFavorite = async (trackId: string) => {
-    const isFav = await storageService.toggleFavorite(trackId);
-    if (isFav) {
-      setFavorites([...favorites, trackId]);
+  const toggleFavorite = async (trackOrId: string | Track) => {
+    let trackId: string;
+    let trackData: Track | undefined;
+
+    if (typeof trackOrId === 'object' && trackOrId !== null) {
+      trackId = String(trackOrId.id);
+      trackData = trackOrId;
     } else {
-      setFavorites(favorites.filter((id) => id !== trackId));
+      trackId = String(trackOrId);
+      if (currentTrack && String(currentTrack.id) === trackId) {
+        trackData = currentTrack;
+      } else {
+        trackData = queueRef.current.find((t) => String(t.id) === trackId);
+      }
     }
+
+    const isFav = await storageService.toggleFavorite(trackId, trackData);
+    if (isFav) {
+      setFavorites((prev) => [...prev.filter((id) => id !== trackId), trackId]);
+    } else {
+      setFavorites((prev) => prev.filter((id) => id !== trackId));
+    }
+  };
+
+  const setAudioQuality = (quality: 'low' | 'normal' | 'high') => {
+    setAudioQualityState(quality);
+    audioService.setAudioQuality(quality);
   };
 
   const addToQueue = (track: Track) => setQueue((p) => [...p, track]);
@@ -307,6 +330,8 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         history,
         favorites,
         activeEngine,
+        audioQuality,
+        setAudioQuality,
         playTrack,
         togglePlay,
         seek,
