@@ -19,8 +19,10 @@ class AudioService {
   private isBuffering = false;
   private callbacks: Set<PlaybackStateCallback> = new Set();
   private onEndedCallback: (() => void) | null = null;
+  private currentUrl = '';
+  private corsRetry = false;
 
-  // EQ Frequencies
+  // 5-Band EQ Frequencies
   private readonly EQ_FREQS = [60, 250, 1000, 4000, 14000];
 
   constructor() {
@@ -34,31 +36,50 @@ class AudioService {
   private setupListeners() {
     this.audioElement.addEventListener('timeupdate', () => this.notify());
     this.audioElement.addEventListener('durationchange', () => this.notify());
+
+    this.audioElement.addEventListener('canplay', () => {
+      this.isBuffering = false;
+      this.notify();
+    });
+
     this.audioElement.addEventListener('play', () => {
       this.isBuffering = false;
       this.notify();
       this.callTauriIPC('play');
     });
+
     this.audioElement.addEventListener('pause', () => {
       this.notify();
       this.callTauriIPC('pause');
     });
+
     this.audioElement.addEventListener('waiting', () => {
       this.isBuffering = true;
       this.notify();
     });
+
     this.audioElement.addEventListener('playing', () => {
       this.isBuffering = false;
       this.notify();
     });
+
     this.audioElement.addEventListener('ended', () => {
       this.notify();
       if (this.onEndedCallback) {
         this.onEndedCallback();
       }
     });
-    this.audioElement.addEventListener('error', (e) => {
-      console.error('Audio playback error', e, this.audioElement.error);
+
+    this.audioElement.addEventListener('error', () => {
+      // If anonymous CORS failed, retry once cleanly without CORS header
+      if (!this.corsRetry && this.currentUrl) {
+        console.warn('Audio crossOrigin error, retrying without crossOrigin attribute');
+        this.corsRetry = true;
+        this.audioElement.removeAttribute('crossorigin');
+        this.audioElement.src = this.currentUrl;
+        this.audioElement.play().catch(() => {});
+        return;
+      }
       this.isBuffering = false;
       this.notify();
     });
@@ -73,7 +94,7 @@ class AudioService {
         if (action === 'volume') await ipc.player.setVolume(arg);
       }
     } catch {
-      // IPC silent fallback when in regular browser or test environment
+      // IPC silent fallback
     }
   }
 
@@ -112,35 +133,42 @@ class AudioService {
 
       this.isInitialized = true;
     } catch (e) {
-      console.warn('WebAudio context not yet allowed or failed to init:', e);
+      console.warn('WebAudio init deferred:', e);
     }
   }
 
   public async setSource(url: string, autoplay = true) {
+    this.currentUrl = url;
+    this.corsRetry = false;
+
     if (!this.isInitialized) {
       this.initWebAudio();
     }
     if (this.audioContext && this.audioContext.state === 'suspended') {
-      await this.audioContext.resume();
+      await this.audioContext.resume().catch(() => {});
     }
 
     this.isBuffering = true;
     this.audioElement.src = url;
-    this.audioElement.load();
     this.notify();
 
     if (autoplay) {
       try {
-        await this.audioElement.play();
+        const playPromise = this.audioElement.play();
+        if (playPromise !== undefined) {
+          await playPromise;
+          this.isBuffering = false;
+          this.notify();
+        }
       } catch (err) {
-        console.warn('Autoplay prevented or interrupted', err);
+        console.warn('Autoplay handled', err);
       }
     }
   }
 
   public async play() {
     if (this.audioContext && this.audioContext.state === 'suspended') {
-      await this.audioContext.resume();
+      await this.audioContext.resume().catch(() => {});
     }
     try {
       await this.audioElement.play();

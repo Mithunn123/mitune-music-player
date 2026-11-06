@@ -50,7 +50,7 @@ export const RecommendationsDashboard: React.FC = () => {
     setActiveMood(seed.tag);
     setIsRefreshing(true);
     try {
-      const tracks = await recommendationEngine.fetchLiveSongs(seed.query, 14);
+      const tracks = await recommendationEngine.fetchInstantSongs(seed.query, 14);
       setHeadline(`Vibe Radio: ${seed.tag}`);
       setDescription(`Instant real-time stream queue generated from ${seed.tag}`);
       setForYouTracks(tracks);

@@ -138,12 +138,14 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         // Direct local file blob
         await audioService.setSource(track.audioBlobUrl, true);
       } else if (track.streamUrl) {
-        // Already has direct stream
+        // Already has direct stream - INSTANT PLAYBACK
         await audioService.setSource(track.streamUrl, true);
       } else {
-        // Resolve online stream via Piped
         setIsBuffering(true);
-        const resolvedUrl = await resolverService.resolveAudioStream(track.id);
+        const resolvedUrl = await resolverService.resolveAudioStream(
+          track.id,
+          `${track.title} ${track.artist}`
+        );
         if (resolvedUrl) {
           track.streamUrl = resolvedUrl;
           await audioService.setSource(resolvedUrl, true);
@@ -151,6 +153,12 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           console.error('Failed to resolve stream for track', track.title);
           setIsBuffering(false);
         }
+      }
+
+      // Preload next track in queue for 0ms transition
+      const nextIdx = index + 1;
+      if (nextIdx < queueRef.current.length) {
+        resolverService.preloadTrack(queueRef.current[nextIdx]);
       }
     } catch (err) {
       console.error('Error during track play:', err);
@@ -189,10 +197,14 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (track.audioBlobUrl) {
         await audioService.setSource(track.audioBlobUrl, true);
       } else if (track.streamUrl) {
+        // INSTANT ZERO-LATENCY PLAYBACK
         await audioService.setSource(track.streamUrl, true);
       } else {
         setIsBuffering(true);
-        const resolvedUrl = await resolverService.resolveAudioStream(track.id);
+        const resolvedUrl = await resolverService.resolveAudioStream(
+          track.id,
+          `${track.title} ${track.artist}`
+        );
         if (resolvedUrl) {
           track.streamUrl = resolvedUrl;
           await audioService.setSource(resolvedUrl, true);
@@ -200,6 +212,12 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           console.error('Failed to resolve track stream URL');
           setIsBuffering(false);
         }
+      }
+
+      // Preload next track in queue
+      const nextIdx = idx + 1;
+      if (nextIdx < q.length) {
+        resolverService.preloadTrack(q[nextIdx]);
       }
     } catch (err) {
       console.error('Playback trigger error', err);

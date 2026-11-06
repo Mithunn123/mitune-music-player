@@ -5,7 +5,7 @@ export interface Track {
   album?: string;
   duration: number; // in seconds
   albumArt: string;
-  source: 'local' | 'piped' | 'spotify' | 'ytmusic' | 'demo';
+  source: 'local' | 'piped' | 'spotify' | 'ytmusic' | 'demo' | 'instant';
   uri?: string;
   streamUrl?: string;
   file?: File;
