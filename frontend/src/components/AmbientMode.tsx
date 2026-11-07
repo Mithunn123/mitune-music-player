@@ -142,7 +142,7 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose, onOpe
 
   return (
     <div 
-      className={`fixed inset-0 z-40 bg-[#0d0e12] flex flex-col justify-between overflow-hidden select-none transition-opacity duration-300 ${
+      className={`fixed inset-0 z-40 bg-[#0d0e12] h-screen w-full relative flex flex-col justify-between items-center overflow-hidden select-none transition-opacity duration-300 ${
         isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
       }`}
       aria-hidden={!isOpen}
@@ -157,7 +157,7 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose, onOpe
       </div>
 
       {/* Top Header Bar */}
-      <div className="relative z-10 px-6 sm:px-8 py-5 flex items-center justify-between border-b border-white/5">
+      <div className="relative z-10 w-full px-8 py-5 flex items-center justify-between border-b border-white/5">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-white text-black flex items-center justify-center font-bold text-xs tracking-wider shadow-sm">
             M
@@ -207,15 +207,15 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose, onOpe
       </div>
 
       {/* Center Stage */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 max-w-4xl mx-auto w-full">
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 w-full">
         {displayMode === 'artwork' ? (
           /* ========================================================
              MODE A: 1:1 artwork (rounded-2xl with subtle 1px border),
              left-aligned metadata
              ======================================================== */
-          <div className="w-full max-w-md flex flex-col items-center sm:items-start space-y-6 animate-in fade-in zoom-in-95 duration-200">
+          <div className="w-full max-w-xl flex flex-col items-center justify-center mx-auto space-y-6 animate-in fade-in zoom-in-95 duration-200">
             {/* 1:1 Artwork */}
-            <div className="w-64 h-64 sm:w-80 sm:h-80 aspect-square rounded-2xl overflow-hidden bg-[#181920] border border-white/10 shadow-2xl relative group">
+            <div className="w-64 h-64 sm:w-80 sm:h-80 mx-auto block aspect-square rounded-2xl overflow-hidden bg-[#181920] border border-white/10 shadow-2xl relative group">
               <img
                 src={albumArt}
                 alt={currentTrack?.title || 'Track Artwork'}
@@ -225,10 +225,10 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose, onOpe
               />
             </div>
 
-            {/* Left-Aligned Metadata */}
-            <div className="w-full text-center sm:text-left">
-              <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0 flex-1">
+            {/* Centered Metadata */}
+            <div className="text-center w-full flex flex-col items-center justify-center">
+              <div className="flex items-center justify-center gap-3 w-full max-w-md">
+                <div className="min-w-0 flex-1 text-center">
                   <h2 
                     className="text-xl sm:text-2xl font-bold text-white tracking-tight truncate cursor-default"
                     title={currentTrack?.title}
@@ -242,7 +242,7 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose, onOpe
                     {currentTrack?.artist || 'Select a track to start playback'}
                   </p>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={() => currentTrack && toggleFavorite(currentTrack)}
                     className="p-2 text-neutral-400 hover:text-white hover:scale-105 active:scale-95 transition-all shrink-0"
@@ -263,7 +263,7 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose, onOpe
               </div>
 
               {currentTrack?.album && (
-                <div className="mt-3">
+                <div className="mt-3 text-center">
                   <span className="inline-block px-2.5 py-0.5 rounded-md bg-white/5 border border-white/10 text-[11px] font-mono text-neutral-400 truncate max-w-full">
                     {currentTrack.album}
                   </span>
@@ -275,7 +275,7 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose, onOpe
           /* ========================================================
              MODE B: Realistic Vinyl CD with Synchronized Audio Beat Ring
              ======================================================== */
-          <div className="flex flex-col items-center justify-center space-y-8 animate-in fade-in zoom-in-95 duration-200">
+          <div className="w-full max-w-xl flex flex-col items-center justify-center mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-200">
             <div className="relative flex items-center justify-center">
               {/* Circular Audio Equalizer Beat Ring (Direct DOM Mutation Container) */}
               <div 
@@ -354,7 +354,7 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose, onOpe
       </div>
 
       {/* Bottom Ergonomic Thumb-Zone Controls Bar */}
-      <div className="relative z-10 px-6 sm:px-8 pb-10 max-w-xl mx-auto w-full space-y-4">
+      <div className="relative z-10 w-full px-8 pb-10 max-w-xl mx-auto space-y-4 flex flex-col items-center">
         {/* Full-width Scrubber Bar Flanked by Monospace Timestamps with tabular-nums */}
         <div className="w-full flex items-center gap-3">
           <span className="text-xs font-mono tabular-nums text-neutral-400 select-none w-10 text-right">
@@ -413,7 +413,7 @@ export const AmbientMode: React.FC<AmbientModeProps> = ({ isOpen, onClose, onOpe
             )}
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-center gap-6">
             <button
               onClick={previousTrack}
               className="p-2.5 rounded-full text-neutral-300 hover:text-white hover:scale-110 active:scale-95 transition-all"
