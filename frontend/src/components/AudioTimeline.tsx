@@ -14,7 +14,8 @@ import {
   Laptop, 
   SlidersHorizontal,
   Check,
-  BookmarkPlus
+  BookmarkPlus,
+  Maximize2
 } from 'lucide-react';
 import { useAudio } from '../context/AudioContext';
 import { Track } from '../types/music';
@@ -25,6 +26,7 @@ interface AudioTimelineProps {
   onToggleLyrics?: () => void;
   isLyricsOpen?: boolean;
   onOpenAddToPlaylist?: (track: Track) => void;
+  onToggleAmbient?: () => void;
 }
 
 const OUTPUT_DEVICES = [
@@ -39,6 +41,7 @@ export const AudioTimeline: React.FC<AudioTimelineProps> = ({
   onToggleLyrics,
   isLyricsOpen,
   onOpenAddToPlaylist,
+  onToggleAmbient,
 }) => {
   const {
     currentTrack,
@@ -311,6 +314,17 @@ export const AudioTimeline: React.FC<AudioTimelineProps> = ({
               title="Audio Equalizer"
             >
               <SlidersHorizontal className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Full Screen Ambient Mode Utility */}
+          {onToggleAmbient && (
+            <button
+              onClick={onToggleAmbient}
+              className="p-2 rounded-lg text-neutral-400 hover:text-white hover:scale-105 active:scale-95 transition-all"
+              title="Ambient Full Screen Mode"
+            >
+              <Maximize2 className="w-4 h-4" />
             </button>
           )}
 

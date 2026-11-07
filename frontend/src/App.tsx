@@ -410,6 +410,7 @@ const MainApp: React.FC = () => {
           onToggleLyrics={() => setIsLyricsOpen(!isLyricsOpen)}
           isLyricsOpen={isLyricsOpen}
           onOpenAddToPlaylist={(track) => setTrackToAddToPlaylist(track)}
+          onToggleAmbient={() => setIsAmbientModeOpen(!isAmbientModeOpen)}
         />
       </div>
 
